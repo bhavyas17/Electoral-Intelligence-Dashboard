@@ -53,27 +53,6 @@ Dashboard/
 
 ---
 
-## 🗄️ Database Setup (PostgreSQL + PostGIS)
-
-To mount the database architecture and test spatial indexes:
-
-1. **Install PostgreSQL and PostGIS**:
-   ```bash
-   # On macOS using Homebrew
-   brew install postgresql postgis
-   ```
-2. **Create the Database**:
-   ```sql
-   CREATE DATABASE vikvox_campaign;
-   \c vikvox_campaign;
-   ```
-3. **Run the Database Schema**:
-   ```bash
-   psql -d vikvox_campaign -f db_schema.sql
-   ```
-
----
-
 ## 🚀 Running the Project
 
 ### Option A: Local Sandbox Mode (No Node.js/DB dependencies required)
