@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relationship & Stakeholder Intelligence (Module 5)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    /* Overall screen scrolling and viewport visibility overrides */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: auto !important;
+      min-height: 100vh;
+      background: #0a0b12;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+    .people-overlay {
+      position: relative;
+      width: 100vw;
+      height: auto !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .people-content {
+      overflow-y: visible !important;
+      height: auto !important;
+    }
+    .people-column {
+      overflow: visible !important;
+      height: auto !important;
+    }
+
+    /* Light Theme Network Graph Overrides */
+    #people-graph-container {
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    #people-graph-svg .node-label {
+      fill: #0f172a !important; /* Dark text for high-contrast visibility */
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important; /* Light text drop shadow */
+      font-weight: 600 !important;
+    }
+    #people-graph-svg .graph-edge {
+      stroke: rgba(15, 23, 42, 0.15) !important; /* Darker edge lines */
+      stroke-width: 1.5px !important;
+    }
+    #people-graph-svg .graph-edge.aligned {
+      stroke: rgba(16, 185, 129, 0.4) !important; /* Highlight alignment */
+      stroke-width: 2px !important;
+    }
+    #people-graph-svg .graph-edge.conflict {
+      stroke: rgba(239, 68, 68, 0.4) !important; /* Highlight divergence */
+      stroke-width: 2px !important;
+    }
+    #people-graph-svg .node-circle {
+      stroke: #ffffff !important;
+      stroke-width: 2px !important;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    }
+    #people-graph-svg .node-circle:hover {
+      stroke: #0f172a !important;
+      stroke-width: 3px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="people-overlay">
+    <header class="people-header">
+      <div class="logo-container">
+        <div class="logo-glow" style="background: #8b5cf6; box-shadow: 0 0 12px #8b5cf6;"></div>
+        <h1 style="font-size: 1.25rem;">Relationship & Stakeholder Intelligence</h1>
+        <span class="district-badge" style="background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; color: #c084fc; margin-left: 0.5rem;">Module 5 Relationship Radar</span>
+        
+        <!-- Role-Based Access Control Dropdown -->
+        <div class="district-dropdown-container" style="margin-left: 1rem;">
+          <button class="district-badge dropdown-trigger" id="people-role-btn" style="background: rgba(139, 92, 246, 0.12); border: 1px solid #8b5cf6; color: #c084fc; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Role: Manager (Full Access)
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="people-role-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select Dashboard Role View</div>
+            <a href="#" class="people-role-dropdown-item active" data-role="manager">Campaign Manager / Treasurer</a>
+            <a href="#" class="people-role-dropdown-item" data-role="director">Communications Director</a>
+            <a href="#" class="people-role-dropdown-item" data-role="field">Field Staff</a>
+          </div>
+        </div>
+
+        <!-- Regional Dropdown Selector -->
+        <div class="district-dropdown-container" style="margin-left: 0.5rem;">
+          <button class="district-badge dropdown-trigger" id="people-district-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Illinois District 21 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="people-district-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select State / Region</div>
+            <a href="#" class="people-dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+            <div class="dropdown-header">Select Senatorial District</div>
+            <a href="#" class="people-dropdown-item active" data-value="sd-21">Illinois District 21</a>
+            <a href="#" class="people-dropdown-item" data-value="sd-22">Illinois District 22</a>
+            <a href="#" class="people-dropdown-item" data-value="sd-41">Illinois District 41</a>
+            <a href="#" class="people-dropdown-item" data-value="sd-42">Illinois District 42</a>
+          </div>
+        </div>
+      </div>
+      <button class="action-btn" id="btn-load-scenario" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(139, 92, 246, 0.15); border: 1px solid #8b5cf6; color: #c084fc; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth); margin-right: 0.5rem;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Load Coalition Shift Scenario
+      </button>
+      <button class="action-btn" id="btn-close-people" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); color: #fca5a5; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Close Window
+      </button>
+    </header>
+
+    <div class="people-content">
+      <!-- Left Column: Stakeholders & Endorsements -->
+      <div class="people-column">
+        <!-- Stakeholder Map Network Graph Panel -->
+        <div class="people-panel-card" style="position: relative;">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #a78bfa;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M2 12h20"></path></svg>
+            <span>Stakeholder Network Map (Influence vs. Alignment)</span>
+          </div>
+          <p class="people-card-desc">Force-directed representation of relationships between local advocacy organizations, labor unions, and community leaders.</p>
+          
+          <!-- Physics simulation svg container -->
+          <div id="people-graph-container" style="width: 100%; height: 350px; border-radius: 8px; overflow: hidden; position: relative;">
+            <svg id="people-graph-svg" style="width: 100%; height: 100%;"></svg>
+            
+            <!-- Floating Graph Legend -->
+            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(15,17,26,0.9); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.5rem; display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.65rem; color: var(--text-secondary);">
+              <div style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span> High Alignment</div>
+              <div style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 6px; height: 6px; background: #f59e0b; border-radius: 50%;"></span> Neutral Status</div>
+              <div style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 6px; height: 6px; background: #ef4444; border-radius: 50%;"></span> Lapsed / Low Alignment</div>
+            </div>
+
+            <!-- Slide-in node profile drawer inside the card boundaries -->
+            <div id="people-stakeholder-drawer" class="stakeholder-drawer" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.25rem;">
+                <h4 id="drawer-node-name" style="margin: 0; font-size: 0.85rem; color: white;">Lake County Federation of Labor</h4>
+                <button id="btn-close-drawer" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; outline: none;">&times;</button>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.72rem; color: var(--text-secondary);">
+                <div>Influence Score: <strong style="color: white;" id="drawer-node-influence">9 / 10</strong></div>
+                <div>Alignment Score: <strong style="color: #10b981;" id="drawer-node-alignment">High Match</strong></div>
+                <div>Last Meeting: <span style="color: #cbd5e1;" id="drawer-node-lastmeeting">April 12, 2026</span></div>
+                <div>Status: <span class="bill-status-badge passed" id="drawer-node-status" style="font-size: 0.6rem; padding: 0.05rem 0.25rem;">Endorsed</span></div>
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.35rem; margin-top: 0.2rem;">
+                  <strong style="color: white; display: block; margin-bottom: 0.15rem;">Strategic Committments / Asks:</strong>
+                  <p id="drawer-node-asks" style="margin: 0; line-height: 1.3; font-style: italic;"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Endorsements & Target Oppositions Panel -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #10b981;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span>Endorsement Pipeline & Conversion Targets</span>
+          </div>
+          <div style="display: flex; gap: 1rem; margin-bottom: 0.25rem;">
+            <div style="flex: 1; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Confirmed Endorsements</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-success);" id="lbl-people-confirmed-count">18 confirmed</div>
+            </div>
+            <div style="flex: 1; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Target Neutrals Remaining</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: #a7f3d0;" id="lbl-people-neutral-count">8 targeted</div>
+            </div>
+          </div>
+
+          <!-- Tabbed segmentation -->
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; border-bottom: 1px solid var(--border-color);">
+              <span class="people-pipeline-tab active" id="tab-pipeline-confirmed" style="flex: 1; text-align: center; font-size: 0.72rem; padding: 0.35rem; cursor: pointer; color: white;">Confirmed</span>
+              <span class="people-pipeline-tab" id="tab-pipeline-neutrals" style="flex: 1; text-align: center; font-size: 0.72rem; padding: 0.35rem; cursor: pointer; color: var(--text-secondary);">Neutrals (Targets)</span>
+              <span class="people-pipeline-tab" id="tab-pipeline-lapsed" style="flex: 1; text-align: center; font-size: 0.72rem; padding: 0.35rem; cursor: pointer; color: var(--text-secondary);">Lapsed / Dormant</span>
+            </div>
+            <div id="people-pipeline-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding-right: 0.25rem;">
+              <!-- Dynamically populated stakeholder list -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Campaign Finance & Compliance, Press Tracker -->
+      <div class="people-column">
+        <!-- Campaign Finance & Compliance Panel -->
+        <div class="people-panel-card maskable-card" id="donor-compliance-panel">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #ef4444;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Campaign Finance Sector Mapping & Compliance Radar</span>
+          </div>
+          
+          <div class="rbac-masked-overlay" style="display: none;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #fda4af; margin-bottom: 0.5rem;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <div style="font-size: 0.8rem; font-weight: 600; color: white;">Financial Data Masked</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.15rem;">Field Staff roles are prohibited from viewing financial and donor compliance modules.</div>
+          </div>
+
+          <div class="compliance-active-wrapper" style="display: flex; flex-direction: column; gap: 0.65rem;">
+            <!-- Compliance Red Alert Banner -->
+            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem;" id="people-compliance-box">
+              <div style="font-size: 0.7rem; font-weight: 700; color: #fca5a5; display: flex; align-items: center; gap: 0.35rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                CRITICAL COMPLIANCE ALERTS:
+              </div>
+              <div id="people-compliance-alerts-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                <!-- Dynamically populated compliance flags -->
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Sector Breakdown:</div>
+                <div class="people-chart-container" style="height: 120px; position: relative;">
+                  <canvas id="people-donor-chart"></canvas>
+                </div>
+              </div>
+              
+              <div style="display: flex; flex-direction: column; gap: 0.35rem; justify-content: center;">
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Cash On Hand:</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: white;" class="maskable-financial">$482,500</div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                  <span style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Donor Density Map:</span>
+                  <button id="btn-open-density-popup" style="background: none; border: none; color: #c084fc; cursor: pointer; font-size: 0.65rem; font-family: var(--font-sans); text-decoration: underline; padding: 0;">Expand Heatmap Pop-up</button>
+                </div>
+                <div id="people-donor-density-map" style="height: 95px; border-radius: 6px; border: 1px solid var(--border-color); overflow: hidden; position: relative; background: #000;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Press Tracker & Outreach Heatmap -->
+        <div class="people-panel-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+            <div class="people-card-header" style="margin: 0; border: none; padding: 0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #3b82f6;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span>Media Coverage & Reporter Outreach Heatmap</span>
+            </div>
+            <button id="btn-open-media-popup" style="background: none; border: none; color: #c084fc; cursor: pointer; font-size: 0.65rem; font-family: var(--font-sans); text-decoration: underline; padding: 0;">Expand Heatmap Pop-up</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <p class="people-card-desc">Tracks publication volume and sentiment shifts from local press outlets alongside reporter relationship contact metrics.</p>
+
+            <!-- Sentiment & coverage stats -->
+            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.35rem;">
+              <span>Total Weekly Articles: <strong style="color: white;" id="lbl-press-count">14 reports</strong></span>
+              <span>Net Press Sentiment: <strong style="color: #10b981;" id="lbl-press-sentiment">+0.22 (Neutral-Positive)</strong></span>
+            </div>
+
+            <!-- Side-by-side: Outreach heatmap tiles & media map -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.25rem;">
+              <div>
+                <div style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Reporter Outreach Contact Heatmap:</div>
+                <div id="people-reporter-heatmap" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;">
+                  <!-- Dynamically populated reporter squares -->
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Media Coverage & Outreach Map:</div>
+                <div id="people-media-outreach-map" style="height: 65px; border-radius: 6px; border: 1px solid var(--border-color); overflow: hidden; position: relative; background: #000;"></div>
+              </div>
+            </div>
+
+            <!-- AI Strategic Relationship Briefing -->
+            <div class="briefing-box" style="margin-top: 0.5rem; background: rgba(139, 92, 246, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); border-radius: 8px; padding: 0.65rem;">
+              <div style="font-size: 0.75rem; font-weight: 600; color: #c084fc; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                Relationship Intelligence Briefing
+              </div>
+              <ul id="people-weekly-bullet-brief" style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.45; margin: 0; padding-left: 1rem;">
+                <!-- Dynamically populated weekly briefing items -->
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Leaflet Map JS Dependency -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Main app script which contains all Module 5 dataset variables and function helpers -->
+  <script src="app.js?v=5"></script>
+  
+  <script>
+    let donorDensityMap;
+    let mediaOutreachMap;
+    let donorHeatLayers = [];
+    let mediaHeatLayers = [];
+
+    function initStandaloneMaps() {
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+      
+      // 1. Donor Density Map
+      const donorContainer = document.getElementById("people-donor-density-map");
+      if (donorContainer && !donorDensityMap) {
+        donorDensityMap = L.map("people-donor-density-map", {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: true,
+          scrollWheelZoom: false
+        }).setView(center, 11);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(donorDensityMap);
+
+        drawDonorDensityHeat(center);
+      }
+
+      // 2. Press Outreach Map
+      const mediaContainer = document.getElementById("people-media-outreach-map");
+      if (mediaContainer && !mediaOutreachMap) {
+        mediaOutreachMap = L.map("people-media-outreach-map", {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: true,
+          scrollWheelZoom: false
+        }).setView(center, 11);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(mediaOutreachMap);
+
+        drawMediaOutreachHeat(center);
+      }
+    }
+
+    function drawDonorDensityHeat(center) {
+      if (!donorDensityMap) return;
+      donorHeatLayers.forEach(l => donorDensityMap.removeLayer(l));
+      donorHeatLayers = [];
+
+      const offsets = [
+        { dLat: 0.02, dLng: -0.01, r: 850, col: '#8b5cf6', op: 0.4 },
+        { dLat: -0.02, dLng: 0.02, r: 700, col: '#10b981', op: 0.3 },
+        { dLat: 0.01, dLng: 0.03, r: 600, col: '#f59e0b', op: 0.3 }
+      ];
+
+      offsets.forEach(o => {
+        const c = L.circle([center[0] + o.dLat, center[1] + o.dLng], {
+          radius: o.r,
+          color: o.col,
+          fillColor: o.col,
+          fillOpacity: o.op,
+          weight: 1
+        }).addTo(donorDensityMap);
+        donorHeatLayers.push(c);
+      });
+    }
+
+    function drawMediaOutreachHeat(center) {
+      if (!mediaOutreachMap) return;
+      mediaHeatLayers.forEach(l => mediaOutreachMap.removeLayer(l));
+      mediaHeatLayers = [];
+
+      const offsets = [
+        { dLat: -0.01, dLng: -0.02, r: 900, col: '#3b82f6', op: 0.35 },
+        { dLat: 0.02, dLng: 0.03, r: 800, col: '#ef4444', op: 0.3 }
+      ];
+
+      offsets.forEach(o => {
+        const c = L.circle([center[0] + o.dLat, center[1] + o.dLng], {
+          radius: o.r,
+          color: o.col,
+          fillColor: o.col,
+          fillOpacity: o.op,
+          weight: 1
+        }).addTo(mediaOutreachMap);
+        mediaHeatLayers.push(c);
+      });
+    }
+
+    function updateStandaloneMaps(val) {
+      const center = DISTRICT_CENTERS[val] || DISTRICT_CENTER;
+      if (donorDensityMap) {
+        donorDensityMap.setView(center, 11);
+        drawDonorDensityHeat(center);
+        setTimeout(() => donorDensityMap.invalidateSize(), 50);
+      }
+      if (mediaOutreachMap) {
+        mediaOutreachMap.setView(center, 11);
+        drawMediaOutreachHeat(center);
+        setTimeout(() => mediaOutreachMap.invalidateSize(), 50);
+      }
+    }
+
+    let popupDensityMap;
+    let popupHeatLayers = [];
+
+    function initPopupMap() {
+      const modal = document.getElementById("density-modal");
+      const container = document.getElementById("popup-density-map");
+      
+      if (modal && container && !popupDensityMap) {
+        popupDensityMap = L.map("popup-density-map", {
+          zoomControl: true,
+          attributionControl: false
+        }).setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(popupDensityMap);
+
+        drawPopupDensityHeat();
+      }
+    }
+
+    function drawPopupDensityHeat() {
+      if (!popupDensityMap) return;
+      popupHeatLayers.forEach(l => popupDensityMap.removeLayer(l));
+      popupHeatLayers = [];
+
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+
+      // Draw rich density points with pop-ups containing mockup details
+      const points = [
+        { dLat: 0.02, dLng: -0.01, r: 400, color: '#8b5cf6', fill: '#8b5cf6', desc: "<strong>Naperville Precinct 4</strong><br/>Total contributions: $142,500<br/>Avg contribution: $245" },
+        { dLat: -0.02, dLng: 0.02, r: 300, color: '#ef4444', fill: '#ef4444', desc: "<strong>Lisle Precinct 12</strong><br/>Total contributions: $88,200<br/>Avg contribution: $185" },
+        { dLat: 0.01, dLng: 0.04, r: 350, color: '#f59e0b', fill: '#f59e0b', desc: "<strong>Woodridge Precinct 8</strong><br/>Total contributions: $104,900<br/>Avg contribution: $210" },
+        { dLat: 0.03, dLng: 0.02, r: 250, color: '#10b981', fill: '#10b981', desc: "<strong>Warrenville Precinct 2</strong><br/>Total contributions: $62,000<br/>Avg contribution: $140" }
+      ];
+
+      points.forEach(p => {
+        const c = L.circle([center[0] + p.dLat, center[1] + p.dLng], {
+          radius: p.r,
+          color: p.color,
+          fillColor: p.fill,
+          fillOpacity: 0.5,
+          weight: 1.5
+        }).addTo(popupDensityMap).bindPopup(p.desc);
+        popupHeatLayers.push(c);
+      });
+    }
+
+    let popupMediaMap;
+    let popupMediaLayers = [];
+
+    function initPopupMediaMap() {
+      const modal = document.getElementById("media-modal");
+      const container = document.getElementById("popup-media-map");
+      
+      if (modal && container && !popupMediaMap) {
+        popupMediaMap = L.map("popup-media-map", {
+          zoomControl: true,
+          attributionControl: false
+        }).setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(popupMediaMap);
+
+        drawPopupMediaHeat();
+      }
+    }
+
+    function drawPopupMediaHeat() {
+      if (!popupMediaMap) return;
+      popupMediaLayers.forEach(l => popupMediaMap.removeLayer(l));
+      popupMediaLayers = [];
+
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+
+      // Draw rich density points with pop-ups containing press data
+      const points = [
+        { dLat: -0.01, dLng: -0.02, r: 450, color: '#3b82f6', fill: '#3b82f6', desc: "<strong>Naperville Sun Outlet Office</strong><br/>Outreach Contact: Sarah Taylor<br/>Weekly Articles: 8<br/>Sentiment: +0.32 (Positive)" },
+        { dLat: 0.02, dLng: 0.03, r: 400, color: '#ef4444', fill: '#ef4444', desc: "<strong>Daily Herald Suburban Desk</strong><br/>Outreach Contact: Mark Miller<br/>Weekly Articles: 4<br/>Sentiment: -0.15 (Neutral-Negative)" },
+        { dLat: 0.01, dLng: -0.04, r: 300, color: '#10b981', fill: '#10b981', desc: "<strong>NCTV-17 Broadcaster Hub</strong><br/>Outreach Contact: Lisa Wong<br/>Weekly Articles: 2<br/>Sentiment: +0.45 (Strong Positive)" }
+      ];
+
+      points.forEach(p => {
+        const c = L.circle([center[0] + p.dLat, center[1] + p.dLng], {
+          radius: p.r,
+          color: p.color,
+          fillColor: p.fill,
+          fillOpacity: 0.5,
+          weight: 1.5
+        }).addTo(popupMediaMap).bindPopup(p.desc);
+        popupMediaLayers.push(c);
+      });
+    }
+
+    // Overwrite closing button handler to close the window tab instead of hiding an overlay
+    document.addEventListener("DOMContentLoaded", () => {
+      const closeBtn = document.getElementById("btn-close-people");
+      if (closeBtn) {
+        closeBtn.onclick = () => {
+          window.close();
+        };
+      }
+      
+      // Override district coordinate selectors for sync inside standalone window
+      const mainItems = document.querySelectorAll(".people-dropdown-item");
+      mainItems.forEach(mi => {
+        mi.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          mainItems.forEach(x => x.classList.remove("active"));
+          mi.classList.add("active");
+          
+          const val = mi.getAttribute("data-value");
+          const text = mi.innerText;
+          
+          const trigger = document.getElementById("people-district-btn");
+          if (trigger) {
+            trigger.innerHTML = `${text} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+          }
+          document.getElementById("people-district-dropdown-menu").style.display = "none";
+          
+          activeDistrictCode = val;
+          renderPeopleDashboard();
+          updateStandaloneMaps(val);
+        };
+      });
+
+      // Dummy Data Coalition Shift Scenario definition & handler
+      const scenarioBtn = document.getElementById("btn-load-scenario");
+      if (scenarioBtn) {
+        scenarioBtn.addEventListener("click", () => {
+          // Define detailed test scenario dataset
+          PEOPLE_REGIONAL_DATA['scenario-coalition'] = {
+            confirmedCount: "22 confirmed",
+            neutralCount: "5 targeted",
+            cashOnHand: "$610,000",
+            pressCount: "35 reports",
+            pressSentiment: "+0.45 (Strong Positive)",
+            densityHigh: "Precinct 4 (Naperville)",
+            densityUntapped: "Precinct 10 (Lisle)",
+            briefingBullets: [
+              "SCENARIO ACTIVE: Labor & Green Coalition has formed to push Green Transit Bill SB-2245.",
+              "Major Alignment: IL AFL-CIO and Sierra Club IL announced joint endorsement today.",
+              "Compliance Audit: Fossil Fuel PAC flagged for prohibited sector contributions ($15k limit violation).",
+              "Press Tracker: Chicago Tribune and Daily Herald report strong local support for the joint coalition."
+            ],
+            complianceAlerts: [
+              { name: "Fossil Fuel PAC", amount: "$15,000", badge: "PROHIBITED PAC", badgeClass: "prohibited" },
+              { name: "Richard DeVos", amount: "$5,900", badge: "LIMIT EXCEEDED", badgeClass: "limit-met" },
+              { name: "Patricia Harris", amount: "$1,500", badge: "DUAL DONOR", badgeClass: "dual-donor" }
+            ],
+            sectorBreakdown: [45, 10, 10, 5, 30], // Labor (45%), Env/Legal (30%)
+            reporters: [
+              { name: "Ray Long", beat: "State House", days: 1, dotClass: "green" },
+              { name: "Sarah Taylor", beat: "Naperville Sun", days: 3, dotClass: "green" },
+              { name: "Mark Miller", beat: "Daily Herald", days: 4, dotClass: "green" },
+              { name: "Lisa Wong", beat: "NCTV-17", days: 2, dotClass: "green" }
+            ],
+            pipeline: {
+              confirmed: [
+                { name: "IL AFL-CIO", influence: "9/10", alignment: "100%", last: "Today" },
+                { name: "Sierra Club IL", influence: "8/10", alignment: "98%", last: "Today" },
+                { name: "DuPage Building Trades", influence: "8/10", alignment: "92%", last: "May 2" }
+              ],
+              neutrals: [
+                { name: "Naperville Merchants Guild", influence: "6/10", alignment: "52%", last: "Today" },
+                { name: "Chamber of Commerce", influence: "8/10", alignment: "50%", last: "Today" }
+              ],
+              lapsed: [
+                { name: "Fossil Fuel PAC", influence: "7/10", alignment: "10%", last: "Yesterday" }
+              ]
+            },
+            graph: {
+              nodes: [
+                { id: "Senator", role: "Senator", group: 0, x: 200, y: 175, alignment: "self", influence: 10 },
+                { id: "IL AFL-CIO", role: "Union", group: 1, alignment: "aligned", influence: 9, last: "Today", asks: "Support Green Transit SB-2245." },
+                { id: "Sierra Club IL", role: "Advocacy", group: 1, alignment: "aligned", influence: 8, last: "Today", asks: "Expedite low-emission transit funding." },
+                { id: "Chamber of Commerce", role: "Business", group: 2, alignment: "neutral", influence: 6, last: "Today", asks: "Requests small business emission tax exemptions." },
+                { id: "Fossil Fuel PAC", role: "Advocacy", group: 3, alignment: "opposed", influence: 7, last: "Yesterday", asks: "Opposes SB-2245 emission mandates." }
+              ],
+              links: [
+                { source: "Senator", target: "IL AFL-CIO" },
+                { source: "Senator", target: "Sierra Club IL" },
+                { source: "Senator", target: "Chamber of Commerce" },
+                { source: "Senator", target: "Fossil Fuel PAC" },
+                { source: "IL AFL-CIO", target: "Sierra Club IL" }
+              ]
+            }
+          };
+
+          // Update active parameters
+          activeDistrictCode = 'scenario-coalition';
+          
+          // Sync district trigger HTML
+          const trigger = document.getElementById("people-district-btn");
+          if (trigger) {
+            trigger.innerHTML = `Coalition Shift Scenario <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+          }
+          
+          // Clear active state of other dropdown items
+          mainItems.forEach(x => x.classList.remove("active"));
+          
+          // Update button styling to show it's loaded
+          scenarioBtn.style.background = "rgba(16, 185, 129, 0.18)";
+          scenarioBtn.style.borderColor = "#10b981";
+          scenarioBtn.style.color = "#a7f3d0";
+          scenarioBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><polyline points="20 6 9 17 4 12"></polyline></svg> Scenario Active`;
+          
+          // Rerender dashboard
+          renderPeopleDashboard();
+          updateStandaloneMaps('sd-21'); // Center on active District 21 focus
+        });
+      }
+      
+      // Standalone initial render call
+      renderPeopleDashboard();
+      initStandaloneMaps();
+
+      // Modal open and close bindings
+      const openModalBtn = document.getElementById("btn-open-density-popup");
+      const closeModalBtn = document.getElementById("btn-close-density-modal");
+      const densityModal = document.getElementById("density-modal");
+
+      if (openModalBtn && densityModal) {
+        openModalBtn.onclick = () => {
+          densityModal.style.display = "flex";
+          setTimeout(() => {
+            initPopupMap();
+            if (popupDensityMap) {
+              popupDensityMap.setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+              drawPopupDensityHeat();
+              popupDensityMap.invalidateSize();
+            }
+          }, 100);
+        };
+      }
+
+      if (closeModalBtn && densityModal) {
+        closeModalBtn.onclick = () => {
+          densityModal.style.display = "none";
+        };
+      }
+
+      // Media Coverage Modal bindings
+      const openMediaBtn = document.getElementById("btn-open-media-popup");
+      const closeMediaBtn = document.getElementById("btn-close-media-modal");
+      const mediaModal = document.getElementById("media-modal");
+
+      if (openMediaBtn && mediaModal) {
+        openMediaBtn.onclick = () => {
+          mediaModal.style.display = "flex";
+          setTimeout(() => {
+            initPopupMediaMap();
+            if (popupMediaMap) {
+              popupMediaMap.setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+              drawPopupMediaHeat();
+              popupMediaMap.invalidateSize();
+            }
+          }, 100);
+        };
+      }
+
+      if (closeMediaBtn && mediaModal) {
+        closeMediaBtn.onclick = () => {
+          mediaModal.style.display = "none";
+        };
+      }
+    });
+  </script>
+
+  <!-- Donor Density Fullscreen Pop-up Modal (White Background) -->
+  <div id="density-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 11, 18, 0.75); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div style="background: #ffffff; width: 75vw; height: 75vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+        <div>
+          <h3 style="margin: 0; font-size: 1rem; color: #0f172a; font-family: var(--font-sans); font-weight: 700;">Campaign Finance Donor Density Heatmap</h3>
+          <span style="font-size: 0.7rem; color: #64748b;">Localized geographic contribution mapping centered on selected district. Click zones for details.</span>
+        </div>
+        <button id="btn-close-density-modal" style="background: #ef4444; border: none; color: white; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); transition: background 0.2s;">Close Map</button>
+      </div>
+      <!-- Modal Body (Leaflet Map) -->
+      <div style="flex: 1; position: relative;">
+        <div id="popup-density-map" style="width: 100%; height: 100%; background: #f1f5f9;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Media Coverage Fullscreen Pop-up Modal (White Background) -->
+  <div id="media-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 11, 18, 0.75); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div style="background: #ffffff; width: 75vw; height: 75vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+        <div>
+          <h3 style="margin: 0; font-size: 1rem; color: #0f172a; font-family: var(--font-sans); font-weight: 700;">Media Coverage & Press Outreach Heatmap</h3>
+          <span style="font-size: 0.7rem; color: #64748b;">Localized press coverage volume and reporter outreach distribution. Click zones for details.</span>
+        </div>
+        <button id="btn-close-media-modal" style="background: #ef4444; border: none; color: white; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); transition: background 0.2s;">Close Map</button>
+      </div>
+      <!-- Modal Body (Leaflet Map) -->
+      <div style="flex: 1; position: relative;">
+        <div id="popup-media-map" style="width: 100%; height: 100%; background: #f1f5f9;"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

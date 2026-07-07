@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electoral Arithmetic & Campaign Engine (Module 6)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    /* Viewport scroll override to allow overall screen scrolling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: auto !important;
+      min-height: 100vh;
+      background: #0a0b12;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      color: var(--text-primary);
+    }
+    .people-overlay {
+      position: relative;
+      width: 100vw;
+      height: auto !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .people-content {
+      overflow-y: visible !important;
+      height: auto !important;
+    }
+    .people-column {
+      overflow: visible !important;
+      height: auto !important;
+    }
+    
+    /* Custom light theme elements inside details card */
+    .elec-metric-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      transition: all 0.2s ease;
+    }
+    .elec-metric-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: rgba(15, 17, 26, 0.3);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      color: #cbd5e1;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: white;
+    }
+
+    /* Vote goal progress elements */
+    .vote-goal-container {
+      background: rgba(16, 185, 129, 0.04);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 10px;
+      padding: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+      margin-bottom: 0.25rem;
+      border: 1px solid rgba(255,255,255,0.02);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #34d399);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+      width: 0%;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* AI Memo Box styling */
+    .ai-memo-box {
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.03);
+      border-radius: 10px;
+      padding: 0.85rem;
+      margin-top: 1rem;
+      font-family: var(--font-sans);
+    }
+
+    /* Light Theme Modal Styles */
+    .white-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .white-modal-title {
+      margin: 0;
+      font-size: 1rem;
+      color: #0f172a;
+      font-family: var(--font-sans);
+      font-weight: 700;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="people-overlay">
+    <!-- Header Controls -->
+    <header class="people-header">
+      <div class="logo-container">
+        <div class="logo-glow" style="background: #10b981; box-shadow: 0 0 12px #10b981;"></div>
+        <h1 style="font-size: 1.25rem;">Electoral Arithmetic & Campaign Engine</h1>
+        <span class="district-badge" style="background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #a7f3d0; margin-left: 0.5rem;">Module 6 Engine Room</span>
+        
+        <!-- Regional Dropdown Selector -->
+        <div class="district-dropdown-container" style="margin-left: 1rem;">
+          <button class="district-badge dropdown-trigger" id="people-district-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Illinois District 21 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="people-district-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select State / Region</div>
+            <a href="#" class="people-dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+            <div class="dropdown-header">Select Senatorial District</div>
+            <a href="#" class="people-dropdown-item active" data-value="sd-21">Illinois District 21</a>
+            <a href="#" class="people-dropdown-item" data-value="sd-22">Illinois District 22</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="action-btn" id="btn-load-sim" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #a7f3d0; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Load Simulation Scenario
+        </button>
+        <button class="action-btn" id="btn-close-electoral" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); color: #fca5a5; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          Close Window
+        </button>
+      </div>
+    </header>
+
+    <div class="people-content">
+      <!-- Left Column: Historical Results & Voter Registration -->
+      <div class="people-column">
+        
+        <!-- Live Vote Goal Progress Bar -->
+        <div class="vote-goal-container">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-family: var(--font-sans);">
+            <div>
+              <span style="font-size: 0.65rem; color: #a7f3d0; text-transform: uppercase; font-weight: 600;">Election Strategy Progress</span>
+              <h2 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: white;" id="lbl-vote-progress-title">Target Goal: 48,251 Votes</h2>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.65rem; color: var(--text-secondary);">EST. SECURED PROGRESS</span>
+              <div style="font-size: 1.1rem; font-weight: 700; color: #34d399;" id="lbl-vote-progress-pct">62.4%</div>
+            </div>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="vote-progress-fill" style="width: 62.4%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.25rem;">
+            <span>Secured (Contacts + VBM): <strong style="color: white;" id="lbl-secured-votes">30,120</strong></span>
+            <span>Needed: <strong style="color: #fb7185;" id="lbl-needed-votes">18,131</strong></span>
+          </div>
+        </div>
+
+        <!-- Sub-module 1: Historical Vote Analysis -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #10b981;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <span>Precinct Historical Election Results</span>
+          </div>
+          <p class="people-card-desc">Precinct-level election results mapping across 2018, 2020, and 2022. Shows derived Swing Delta and Ticket-Splitting Indices.</p>
+          
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Precinct</th>
+                  <th>Registered</th>
+                  <th>Turnout %</th>
+                  <th>Allen (D)</th>
+                  <th>Opponent (R)</th>
+                  <th>Margin %</th>
+                  <th>Swing Delta</th>
+                  <th>Ticket-Split</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-historical-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sub-module 2: Voter Registration Tracker -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #60a5fa;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Live Voter Registration Audit</span>
+          </div>
+          <p class="people-card-desc">Weekly Illinois State Board of Elections voter file data synchronization showing active versus inactive counts and party affiliation distributions.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+            <div class="elec-metric-card" style="text-align: center;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase;">Active Voters</div>
+              <div style="font-size: 1rem; font-weight: 700; color: white;" id="lbl-active-voters">112,400</div>
+            </div>
+            <div class="elec-metric-card" style="text-align: center;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase;">Inactive Voters</div>
+              <div style="font-size: 1rem; font-weight: 700; color: #fb7185;" id="lbl-inactive-voters">5,200</div>
+            </div>
+            <div class="elec-metric-card" style="text-align: center;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase;">Net Advantage</div>
+              <div style="font-size: 1rem; font-weight: 700; color: #34d399;" id="lbl-net-advantage">+8.2% D</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.75rem; align-items: center; margin-top: 0.25rem;">
+            <div style="height: 120px; position: relative;">
+              <canvas id="chart-registration-splits"></canvas>
+            </div>
+            <div style="font-size: 0.7rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">BigQuery Sync Feed:</div>
+              <div>• Weekly update: <strong style="color: white;">Completed Today</strong></div>
+              <div>• New registrations (7 days): <strong style="color: #60a5fa;" id="lbl-new-registrations">182 users</strong></div>
+              <div>• Hotspot ZIP: <strong style="color: #fbbf24;" id="lbl-hotspot-zip">60085 (Waukegan)</strong></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Canvassing Coverage & Early Mail Balloting -->
+      <div class="people-column">
+        
+        <!-- Sub-module 3: Canvassing & Contact Coverage -->
+        <div class="people-panel-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+            <div class="people-card-header" style="margin: 0; border: none; padding: 0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #3b82f6;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
+              <span>Canvassing and Outreach Coverage Map</span>
+            </div>
+            <button id="btn-open-canvass-popup" style="background: none; border: none; color: #c084fc; cursor: pointer; font-size: 0.65rem; font-family: var(--font-sans); text-decoration: underline; padding: 0;">Expand Heatmap Pop-up</button>
+          </div>
+          <p class="people-card-desc">MiniVAN API integration. Maps precinct contact coverage rates: <span style="color: #34d399; font-weight: 600;">Green (>=70%)</span>, <span style="color: #fbbf24; font-weight: 600;">Amber (40-69%)</span>, and <span style="color: #fb7185; font-weight: 600;">Red (<40%)</span>.</p>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <div style="font-size: 0.72rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div>VAN API Status: <span style="color: #10b981; font-weight: 600;">● Active</span></div>
+              <div>Persuasion Score: <strong style="color: white;" id="lbl-persuasion-score">58.4</strong></div>
+              <div>Contact Efficiency: <strong style="color: #34d399;" id="lbl-contact-efficiency">2.4 votes/vol-hr</strong></div>
+            </div>
+            <div id="people-canvass-map" style="height: 90px; border-radius: 6px; border: 1px solid var(--border-color); overflow: hidden; background: #000;"></div>
+          </div>
+        </div>
+
+        <!-- Sub-module 4: Early Voting & Mail Ballot Tracking -->
+        <div class="people-panel-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+            <div class="people-card-header" style="margin: 0; border: none; padding: 0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #fbbf24;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              <span>Early and Mail Ballot Chase Tracker</span>
+            </div>
+            <button id="btn-open-mail-popup" style="background: none; border: none; color: #c084fc; cursor: pointer; font-size: 0.65rem; font-family: var(--font-sans); text-decoration: underline; padding: 0;">Expand Heatmap Pop-up</button>
+          </div>
+          <p class="people-card-desc">Tracks Mail-in Requests versus Returns. Daily updates identify the VBM chase universe (ballot sent but not returned) to run targeted outreach.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+            <div class="elec-metric-card" style="text-align: center;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase;">VBM Requested</div>
+              <div style="font-size: 1rem; font-weight: 700; color: white;" id="lbl-vbm-requested">18,500</div>
+            </div>
+            <div class="elec-metric-card" style="text-align: center;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase;">VBM Returned</div>
+              <div style="font-size: 1rem; font-weight: 700; color: #34d399;" id="lbl-vbm-returned">11,200 (60.5%)</div>
+            </div>
+            <div class="elec-metric-card" style="text-align: center;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase;">Chase Universe</div>
+              <div style="font-size: 1rem; font-weight: 700; color: #fb7185;" id="lbl-chase-universe">7,300</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 0.5rem; margin-top: 0.25rem;">
+            <div id="people-mail-map" style="height: 100px; border-radius: 6px; border: 1px solid var(--border-color); overflow: hidden; background: #000;"></div>
+            
+            <div style="font-size: 0.7rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.35rem;">
+              <div style="font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Weekly Target Benchmarks:</div>
+              <div>• Under 35 voting pace: <strong style="color: #fb7185;" id="lbl-under35-pace">12% Behind Target</strong></div>
+              <div>• Lake County early turnouts: <strong style="color: #34d399;" id="lbl-early-turnout-pct">+5.4% vs 2022</strong></div>
+              <div>• Legal compliant script tags: <strong style="color: #34d399;">Active & Verified</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategic Field Operations Memo (AI Agent Output) -->
+        <div class="ai-memo-box">
+          <div style="font-size: 0.78rem; font-weight: 600; color: #c084fc; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            AI Field Memo & Strategic Reallocation Recommendation
+          </div>
+          <ul id="elec-memo-list" style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.45; margin: 0; padding-left: 1rem;">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Leaflet Map JS Dependency -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <script>
+    // Bounding Coordinate Centers
+    const DISTRICT_CENTERS = {
+      'state-il': [40.1501, -89.0186],
+      'sd-21': [41.7759, -88.1469], // Naperville focus
+      'sd-22': [41.9806, -88.3125], // Elgin / St Charles focus
+      'scenario-active': [41.7759, -88.1469]
+    };
+    const DISTRICT_CENTER = [41.7759, -88.1469];
+
+    let activeDistrictCode = 'sd-21';
+
+    // Mock Datasets
+    const ELECTORAL_DATA = {
+      'sd-21': {
+        voteGoal: 48251,
+        securedVotes: 30120,
+        activeVoters: "112,400",
+        inactiveVoters: "5,200",
+        advantage: "+8.2% D",
+        newRegistrations: "182 users",
+        hotspotZip: "60085 (Waukegan)",
+        persuasionScore: "58.4",
+        contactEfficiency: "2.4 votes/vol-hr",
+        vbmRequested: "18,500",
+        vbmReturned: "11,200 (60.5%)",
+        chaseUniverse: "7,300",
+        under35Pace: "12% Behind Target",
+        earlyTurnoutPct: "+5.4% vs 2022",
+        regChartData: [48, 38, 14], // D, R, I
+        historical: [
+          { prec: "Precinct 4", reg: "2,450", turnout: "68.2%", dem: "982", rep: "620", margin: "+22.1%", swing: "+4.2%", split: "12.4%" },
+          { prec: "Precinct 10", reg: "1,980", turnout: "52.4%", dem: "512", rep: "520", margin: "-0.8%", swing: "-5.8%", split: "18.2%" },
+          { prec: "Precinct 12", reg: "2,840", turnout: "41.5%", dem: "580", rep: "600", margin: "-1.7%", swing: "+6.1%", split: "9.2%" },
+          { prec: "Precinct 15", reg: "1,550", turnout: "71.0%", dem: "720", rep: "380", margin: "+31.0%", swing: "+2.0%", split: "14.5%" }
+        ],
+        memo: [
+          "RECOMMENDED: Reallocate 15 volunteer door-knocking hours from Precinct 15 (Safe +31%) to Precinct 10 (Swing -0.8% split-ticket hotspot).",
+          "VBM Chase Alert: 1,420 young voters in Waukegan (60085) have ballot in hand but returns are lagging behind target by 12%.",
+          "Compliance Sync: Volunteer call lists scrubbed against official state board inactive/purged registers today.",
+          "Targeting: Support scores prioritize 4,200 moderate split-ticket independent voters in Naperville."
+        ],
+        canvassLayers: [
+          { dLat: 0.015, dLng: -0.01, r: 850, col: '#10b981', desc: "Precinct 4: 78% Coverage" },
+          { dLat: -0.015, dLng: 0.02, r: 700, col: '#fb7185', desc: "Precinct 10: 24% Coverage" },
+          { dLat: 0.005, dLng: 0.03, r: 600, col: '#fbbf24', desc: "Precinct 12: 52% Coverage" }
+        ],
+        mailLayers: [
+          { dLat: -0.01, dLng: -0.01, r: 900, col: '#10b981', desc: "Naperville East: 72% returned" },
+          { dLat: 0.02, dLng: 0.02, r: 800, col: '#fb7185', desc: "Naperville West: 34% returned" }
+        ]
+      },
+      'sd-22': {
+        voteGoal: 44120,
+        securedVotes: 24200,
+        activeVoters: "98,150",
+        inactiveVoters: "4,100",
+        advantage: "+4.1% D",
+        newRegistrations: "94 users",
+        hotspotZip: "60120 (Elgin)",
+        persuasionScore: "51.2",
+        contactEfficiency: "1.9 votes/vol-hr",
+        vbmRequested: "14,200",
+        vbmReturned: "7,800 (54.9%)",
+        chaseUniverse: "6,400",
+        under35Pace: "8% Behind Target",
+        earlyTurnoutPct: "+2.1% vs 2022",
+        regChartData: [44, 42, 14],
+        historical: [
+          { prec: "Precinct 2", reg: "2,100", turnout: "59.2%", dem: "620", rep: "625", margin: "-0.4%", swing: "+2.1%", split: "15.2%" },
+          { prec: "Precinct 6", reg: "1,850", turnout: "61.4%", dem: "610", rep: "520", margin: "+9.1%", swing: "-3.2%", split: "11.4%" },
+          { prec: "Precinct 9", reg: "2,200", turnout: "48.5%", dem: "480", rep: "590", margin: "-10.0%", swing: "+4.1%", split: "8.1%" }
+        ],
+        memo: [
+          "RECOMMENDED: Increase text banking dials in Elgin (60120) by 25% targeting newly active registered independents.",
+          "Early Vote Chase: Direct mailers scheduled tomorrow to 3,200 VBM chase targets in Precinct 9.",
+          "Targeting Model: Safety margin adjustments flags Republican split-ticket potential in Precinct 2."
+        ],
+        canvassLayers: [
+          { dLat: 0.015, dLng: -0.01, r: 850, col: '#fbbf24', desc: "Precinct 2: 58% Coverage" },
+          { dLat: -0.015, dLng: 0.02, r: 700, col: '#10b981', desc: "Precinct 6: 82% Coverage" }
+        ],
+        mailLayers: [
+          { dLat: -0.01, dLng: -0.01, r: 900, col: '#fbbf24', desc: "Elgin North: 55% returned" }
+        ]
+      },
+      'state-il': {
+        voteGoal: 2150000,
+        securedVotes: 1450000,
+        activeVoters: "7,842,000",
+        inactiveVoters: "382,000",
+        advantage: "+12.4% D",
+        newRegistrations: "8,940 users",
+        hotspotZip: "60618 (Chicago)",
+        persuasionScore: "62.8",
+        contactEfficiency: "3.1 votes/vol-hr",
+        vbmRequested: "1,240,000",
+        vbmReturned: "840,000 (67.7%)",
+        chaseUniverse: "400,000",
+        under35Pace: "2% Ahead of Target",
+        earlyTurnoutPct: "+8.9% vs 2022",
+        regChartData: [51, 35, 14],
+        historical: [
+          { prec: "Cook Co P12", reg: "3,100", turnout: "74.2%", dem: "1,520", rep: "780", margin: "+47.7%", swing: "+3.2%", split: "10.4%" },
+          { prec: "Lake Co P4", reg: "2,450", turnout: "68.2%", dem: "982", rep: "620", margin: "+22.1%", swing: "+4.2%", split: "12.4%" },
+          { prec: "DuPage Co P10", reg: "1,980", turnout: "52.4%", dem: "512", rep: "520", margin: "-0.8%", swing: "-5.8%", split: "18.2%" }
+        ],
+        memo: [
+          "STATEWIDE AUDIT: High voter file registration pacings observed across Cook, Lake, and Will counties.",
+          "Early Vote projections indicate high core turnout. Safety margin levels are stable.",
+          "NGP VAN synchronized tables across all 118 legislative districts successfully."
+        ],
+        canvassLayers: [
+          { dLat: 0.0, dLng: 0.0, r: 85000, col: '#10b981', desc: "Statewide Metro Areas: High Coverage" }
+        ],
+        mailLayers: [
+          { dLat: 0.0, dLng: 0.0, r: 85000, col: '#10b981', desc: "Statewide VBM Returns: 67.7% Active" }
+        ]
+      },
+      'scenario-active': {
+        voteGoal: 54000,
+        securedVotes: 48200,
+        activeVoters: "124,500",
+        inactiveVoters: "4,100",
+        advantage: "+14.8% D",
+        newRegistrations: "950 users",
+        hotspotZip: "60085 (Waukegan Surge)",
+        persuasionScore: "78.4",
+        contactEfficiency: "4.8 votes/vol-hr",
+        vbmRequested: "28,200",
+        vbmReturned: "22,100 (78.3%)",
+        chaseUniverse: "6,100",
+        under35Pace: "4% Ahead of Pace",
+        earlyTurnoutPct: "+14.2% vs 2022",
+        regChartData: [55, 30, 15],
+        historical: [
+          { prec: "Precinct 4", reg: "2,450", turnout: "78.2%", dem: "1,450", rep: "420", margin: "+42.0%", swing: "+12.1%", split: "8.2%" },
+          { prec: "Precinct 10", reg: "1,980", turnout: "68.4%", dem: "890", rep: "340", margin: "+27.8%", swing: "+18.2%", split: "6.4%" },
+          { prec: "Precinct 12", reg: "2,840", turnout: "59.2%", dem: "980", rep: "520", margin: "+16.2%", swing: "+12.4%", split: "5.1%" }
+        ],
+        memo: [
+          "SIMULATION SCENARIO LOADED: Core Youth and Labor turnout surge has successfully moved SD-21 margins.",
+          "Safety Margin Calculation: Safety margin targets hit (89.2% of target goal secured).",
+          "Canvassing Shift: Walk lists dynamically redirected from low-propensity persuasion target grids to pure get-out-the-vote mobilization scripts."
+        ],
+        canvassLayers: [
+          { dLat: 0.015, dLng: -0.01, r: 850, col: '#10b981', desc: "Precinct 4: 98% Covered" },
+          { dLat: -0.015, dLng: 0.02, r: 700, col: '#10b981', desc: "Precinct 10: 92% Covered" },
+          { dLat: 0.005, dLng: 0.03, r: 600, col: '#10b981', desc: "Precinct 12: 88% Covered" }
+        ],
+        mailLayers: [
+          { dLat: -0.01, dLng: -0.01, r: 900, col: '#10b981', desc: "Naperville East: 88% returned" },
+          { dLat: 0.02, dLng: 0.02, r: 800, col: '#10b981', desc: "Naperville West: 74% returned" }
+        ]
+      }
+    };
+
+    let regChartInstance = null;
+    let canvassMapObj = null;
+    let mailMapObj = null;
+    let canvassHeatLayers = [];
+    let mailHeatLayers = [];
+
+    // Fullscreen Pop-up Map Pointers
+    let popupCanvassMapObj;
+    let popupMailMapObj;
+    let popupCanvassLayers = [];
+    let popupMailLayers = [];
+
+    // Render Dashboard Panels
+    function renderElectoralDashboard() {
+      const data = ELECTORAL_DATA[activeDistrictCode];
+      if (!data) return;
+
+      // 1. Vote Goal Calculations
+      const progressPct = ((data.securedVotes / data.voteGoal) * 100).toFixed(1);
+      document.getElementById("lbl-vote-progress-title").innerText = `Target Goal: ${data.voteGoal.toLocaleString()} Votes`;
+      document.getElementById("lbl-vote-progress-pct").innerText = `${progressPct}%`;
+      document.getElementById("vote-progress-fill").style.width = `${progressPct}%`;
+      document.getElementById("lbl-secured-votes").innerText = data.securedVotes.toLocaleString();
+      document.getElementById("lbl-needed-votes").innerText = (data.voteGoal - data.securedVotes).toLocaleString();
+
+      // 2. Metrics Block
+      document.getElementById("lbl-active-voters").innerText = data.activeVoters;
+      document.getElementById("lbl-inactive-voters").innerText = data.inactiveVoters;
+      document.getElementById("lbl-new-registrations").innerText = data.newRegistrations;
+      document.getElementById("lbl-hotspot-zip").innerText = data.hotspotZip;
+      document.getElementById("lbl-persuasion-score").innerText = data.persuasionScore;
+      document.getElementById("lbl-contact-efficiency").innerText = data.contactEfficiency;
+      document.getElementById("lbl-vbm-requested").innerText = data.vbmRequested;
+      document.getElementById("lbl-vbm-returned").innerText = data.vbmReturned;
+      document.getElementById("lbl-chase-universe").innerText = data.chaseUniverse;
+      document.getElementById("lbl-under35-pace").innerText = data.under35Pace;
+      document.getElementById("lbl-early-turnout-pct").innerText = data.earlyTurnoutPct;
+
+      // Update color class for Under 35 Pace
+      const paceLabel = document.getElementById("lbl-under35-pace");
+      if (data.under35Pace.includes("Behind")) {
+        paceLabel.style.color = "#fb7185";
+      } else {
+        paceLabel.style.color = "#34d399";
+      }
+
+      // 3. Historical Table
+      const tbody = document.getElementById("tbl-historical-body");
+      tbody.innerHTML = "";
+      data.historical.forEach(h => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${h.prec}</strong></td>
+          <td>${h.reg}</td>
+          <td>${h.turnout}</td>
+          <td>${h.dem}</td>
+          <td>${h.rep}</td>
+          <td style="color: ${h.margin.startsWith('+') ? '#34d399' : '#fb7185'}; font-weight: 600;">${h.margin}</td>
+          <td style="color: ${h.swing.startsWith('+') ? '#34d399' : '#fb7185'};">${h.swing}</td>
+          <td>${h.split}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 4. AI Strategic Memo Bullets
+      const memoList = document.getElementById("elec-memo-list");
+      memoList.innerHTML = "";
+      data.memo.forEach(bullet => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "0.35rem";
+        li.innerHTML = bullet;
+        memoList.appendChild(li);
+      });
+
+      // 5. Registration Chart
+      renderRegistrationChart(data.regChartData);
+
+      // 6. Draw Local Map Layers
+      drawLocalMapsLayers();
+    }
+
+    function renderRegistrationChart(splits) {
+      const ctx = document.getElementById("chart-registration-splits");
+      if (!ctx) return;
+
+      if (regChartInstance) {
+        regChartInstance.destroy();
+      }
+
+      regChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Democrats', 'Republicans', 'Independents'],
+          datasets: [{
+            data: splits,
+            backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          cutout: '75%'
+        }
+      });
+    }
+
+    // Leaflet Small Maps Initializers
+    function initLocalMaps() {
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+
+      // Canvassing map
+      const canvassDiv = document.getElementById("people-canvass-map");
+      if (canvassDiv && !canvassMapObj) {
+        canvassMapObj = L.map("people-canvass-map", {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: true,
+          scrollWheelZoom: false
+        }).setView(center, 11);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(canvassMapObj);
+      }
+
+      // Mail map
+      const mailDiv = document.getElementById("people-mail-map");
+      if (mailDiv && !mailMapObj) {
+        mailMapObj = L.map("people-mail-map", {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: true,
+          scrollWheelZoom: false
+        }).setView(center, 11);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(mailMapObj);
+      }
+
+      drawLocalMapsLayers();
+    }
+
+    function drawLocalMapsLayers() {
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+      const data = ELECTORAL_DATA[activeDistrictCode];
+      if (!data) return;
+
+      // 1. Canvass layers
+      if (canvassMapObj) {
+        canvassHeatLayers.forEach(l => canvassMapObj.removeLayer(l));
+        canvassHeatLayers = [];
+
+        data.canvassLayers.forEach(l => {
+          const c = L.circle([center[0] + l.dLat, center[1] + l.dLng], {
+            radius: l.r,
+            color: l.col,
+            fillColor: l.col,
+            fillOpacity: 0.4,
+            weight: 1
+          }).addTo(canvassMapObj).bindPopup(l.desc);
+          canvassHeatLayers.push(c);
+        });
+      }
+
+      // 2. Mail layers
+      if (mailMapObj) {
+        mailHeatLayers.forEach(l => mailMapObj.removeLayer(l));
+        mailHeatLayers = [];
+
+        data.mailLayers.forEach(l => {
+          const c = L.circle([center[0] + l.dLat, center[1] + l.dLng], {
+            radius: l.r,
+            color: l.col,
+            fillColor: l.col,
+            fillOpacity: 0.4,
+            weight: 1
+          }).addTo(mailMapObj).bindPopup(l.desc);
+          mailHeatLayers.push(c);
+        });
+      }
+    }
+
+    function updateLocalMapsView(val) {
+      const center = DISTRICT_CENTERS[val] || DISTRICT_CENTER;
+      if (canvassMapObj) {
+        canvassMapObj.setView(center, 11);
+        drawLocalMapsLayers();
+        setTimeout(() => canvassMapObj.invalidateSize(), 50);
+      }
+      if (mailMapObj) {
+        mailMapObj.setView(center, 11);
+        drawLocalMapsLayers();
+        setTimeout(() => mailMapObj.invalidateSize(), 50);
+      }
+    }
+
+    // Modal Map Initializers (Light theme, white background)
+    function initPopupCanvassMap() {
+      const container = document.getElementById("popup-canvass-map");
+      if (container && !popupCanvassMapObj) {
+        popupCanvassMapObj = L.map("popup-canvass-map", {
+          zoomControl: true,
+          attributionControl: false
+        }).setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(popupCanvassMapObj);
+
+        drawPopupCanvassLayers();
+      }
+    }
+
+    function drawPopupCanvassLayers() {
+      if (!popupCanvassMapObj) return;
+      popupCanvassLayers.forEach(l => popupCanvassMapObj.removeLayer(l));
+      popupCanvassLayers = [];
+
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+      const data = ELECTORAL_DATA[activeDistrictCode];
+      if (!data) return;
+
+      data.canvassLayers.forEach(l => {
+        const c = L.circle([center[0] + l.dLat, center[1] + l.dLng], {
+          radius: l.r * 1.5,
+          color: l.col,
+          fillColor: l.col,
+          fillOpacity: 0.5,
+          weight: 1.5
+        }).addTo(popupCanvassMapObj).bindPopup(`<strong>${l.desc}</strong><br/>Target Voters: 1,420<br/>Voters Knocked: 950`);
+        popupCanvassLayers.push(c);
+      });
+    }
+
+    function initPopupMailMap() {
+      const container = document.getElementById("popup-mail-map");
+      if (container && !popupMailMapObj) {
+        popupMailMapObj = L.map("popup-mail-map", {
+          zoomControl: true,
+          attributionControl: false
+        }).setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(popupMailMapObj);
+
+        drawPopupMailLayers();
+      }
+    }
+
+    function drawPopupMailLayers() {
+      if (!popupMailMapObj) return;
+      popupMailLayers.forEach(l => popupMailMapObj.removeLayer(l));
+      popupMailLayers = [];
+
+      const center = DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER;
+      const data = ELECTORAL_DATA[activeDistrictCode];
+      if (!data) return;
+
+      data.mailLayers.forEach(l => {
+        const c = L.circle([center[0] + l.dLat, center[1] + l.dLng], {
+          radius: l.r * 1.5,
+          color: l.col,
+          fillColor: l.col,
+          fillOpacity: 0.5,
+          weight: 1.5
+        }).addTo(popupMailMapObj).bindPopup(`<strong>${l.desc}</strong><br/>VBM Outstanding: 450<br/>Chase Priority: High`);
+        popupMailLayers.push(c);
+      });
+    }
+
+    // DomContentLoaded Setup
+    document.addEventListener("DOMContentLoaded", () => {
+      // Close window button
+      const closeBtn = document.getElementById("btn-close-electoral");
+      if (closeBtn) {
+        closeBtn.onclick = () => {
+          window.close();
+        };
+      }
+
+      // Region Dropdown Toggle
+      const trigger = document.getElementById("people-district-btn");
+      const menu = document.getElementById("people-district-dropdown-menu");
+      if (trigger && menu) {
+        trigger.onclick = (e) => {
+          e.stopPropagation();
+          const visible = menu.style.display === "block";
+          menu.style.display = visible ? "none" : "block";
+        };
+        document.addEventListener("click", () => {
+          menu.style.display = "none";
+        });
+      }
+
+      // Region item selection
+      const items = document.querySelectorAll(".people-dropdown-item");
+      items.forEach(mi => {
+        mi.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          items.forEach(x => x.classList.remove("active"));
+          mi.classList.add("active");
+          
+          const val = mi.getAttribute("data-value");
+          const text = mi.innerText;
+          
+          if (trigger) {
+            trigger.innerHTML = `${text} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+          }
+          menu.style.display = "none";
+          
+          activeDistrictCode = val;
+          renderElectoralDashboard();
+          updateLocalMapsView(val);
+        };
+      });
+
+      // Simulation Scenario button click
+      const simBtn = document.getElementById("btn-load-sim");
+      if (simBtn) {
+        simBtn.onclick = () => {
+          activeDistrictCode = 'scenario-active';
+          
+          if (trigger) {
+            trigger.innerHTML = `Simulation Scenario <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+          }
+          items.forEach(x => x.classList.remove("active"));
+
+          simBtn.style.background = "rgba(16, 185, 129, 0.18)";
+          simBtn.style.borderColor = "#10b981";
+          simBtn.style.color = "#a7f3d0";
+          simBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><polyline points="20 6 9 17 4 12"></polyline></svg> Sim Active`;
+
+          renderElectoralDashboard();
+          updateLocalMapsView('sd-21');
+        };
+      }
+
+      // Canvassing popup modal triggers
+      const openCanvassBtn = document.getElementById("btn-open-canvass-popup");
+      const closeCanvassBtn = document.getElementById("btn-close-canvass-modal");
+      const canvassModal = document.getElementById("canvass-modal");
+
+      if (openCanvassBtn && canvassModal) {
+        openCanvassBtn.onclick = () => {
+          canvassModal.style.display = "flex";
+          setTimeout(() => {
+            initPopupCanvassMap();
+            if (popupCanvassMapObj) {
+              popupCanvassMapObj.setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+              drawPopupCanvassLayers();
+              popupCanvassMapObj.invalidateSize();
+            }
+          }, 100);
+        };
+      }
+
+      if (closeCanvassBtn && canvassModal) {
+        closeCanvassBtn.onclick = () => {
+          canvassModal.style.display = "none";
+        };
+      }
+
+      // Mail VBM popup modal triggers
+      const openMailBtn = document.getElementById("btn-open-mail-popup");
+      const closeMailBtn = document.getElementById("btn-close-mail-modal");
+      const mailModal = document.getElementById("mail-modal");
+
+      if (openMailBtn && mailModal) {
+        openMailBtn.onclick = () => {
+          mailModal.style.display = "flex";
+          setTimeout(() => {
+            initPopupMailMap();
+            if (popupMailMapObj) {
+              popupMailMapObj.setView(DISTRICT_CENTERS[activeDistrictCode] || DISTRICT_CENTER, 12);
+              drawPopupMailLayers();
+              popupMailMapObj.invalidateSize();
+            }
+          }, 100);
+        };
+      }
+
+      if (closeMailBtn && mailModal) {
+        closeMailBtn.onclick = () => {
+          mailModal.style.display = "none";
+        };
+      }
+
+      // Render on load
+      renderElectoralDashboard();
+      initLocalMaps();
+    });
+  </script>
+
+  <!-- Canvassing Map Fullscreen Pop-up Modal (White Background) -->
+  <div id="canvass-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 11, 18, 0.75); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div style="background: #ffffff; width: 75vw; height: 75vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
+      <!-- Modal Header -->
+      <div class="white-modal-header">
+        <div>
+          <h3 class="white-modal-title">Canvassing Coverage & Volunteer Metrics Heatmap</h3>
+          <span style="font-size: 0.7rem; color: #64748b;">Detailed precinct door-knocking completion rates. Click circles for details.</span>
+        </div>
+        <button id="btn-close-canvass-modal" style="background: #ef4444; border: none; color: white; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans);">Close Map</button>
+      </div>
+      <!-- Modal Body -->
+      <div style="flex: 1; position: relative;">
+        <div id="popup-canvass-map" style="width: 100%; height: 100%; background: #f1f5f9;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mail Chase Fullscreen Pop-up Modal (White Background) -->
+  <div id="mail-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 11, 18, 0.75); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div style="background: #ffffff; width: 75vw; height: 75vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
+      <!-- Modal Header -->
+      <div class="white-modal-header">
+        <div>
+          <h3 class="white-modal-title">Mail Ballot Return & Chase Universe Heatmap</h3>
+          <span style="font-size: 0.7rem; color: #64748b;">Precinct-level Mail ballot return rates and outreach chase queues. Click circles for details.</span>
+        </div>
+        <button id="btn-close-mail-modal" style="background: #ef4444; border: none; color: white; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans);">Close Map</button>
+      </div>
+      <!-- Modal Body -->
+      <div style="flex: 1; position: relative;">
+        <div id="popup-mail-map" style="width: 100%; height: 100%; background: #f1f5f9;"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

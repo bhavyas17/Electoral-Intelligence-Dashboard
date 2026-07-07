@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VikVox Kitchen | Constituency Overview - IL Senate District 21</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- Leaflet Draw CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+  <!-- Navigation / Header -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-glow"></div>
+      <h1>VikVox Kitchen</h1>
+      <div class="district-dropdown-container">
+        <button class="district-badge dropdown-trigger" id="active-district-btn">
+          Illinois District 21 
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="dropdown-menu" id="district-dropdown-menu">
+          <div class="dropdown-header">Select State / Region</div>
+          <a href="#" class="dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+          
+          <div class="dropdown-header">Select Senatorial District</div>
+          <a href="#" class="dropdown-item active" data-value="sd-21">Illinois District 21</a>
+          <a href="#" class="dropdown-item" data-value="sd-22">Illinois District 22</a>
+          <a href="#" class="dropdown-item" data-value="sd-41">Illinois District 41</a>
+          <a href="#" class="dropdown-item" data-value="sd-42">Illinois District 42</a>
+        </div>
+      </div>
+      
+      <!-- Demographics Panel Toggle Button -->
+      <button class="district-badge" id="btn-demographic-panel" style="background: rgba(16, 185, 129, 0.12); border: 1px solid var(--color-success); color: #a7f3d0; margin-left: 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        Demographics Panel
+      </button>
+
+      <!-- Key Issues Tracker Toggle Button -->
+      <button class="district-badge" id="btn-issues-tracker" style="background: rgba(234, 179, 8, 0.12); border: 1px solid var(--color-warning); color: #fef08a; margin-left: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 22h20L12 2z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Key Issues Tracker
+      </button>
+
+      <!-- Sentiment Analysis Toggle Button -->
+      <button class="district-badge" id="btn-sentiment-analysis" style="background: rgba(244, 63, 94, 0.12); border: 1px solid var(--color-danger); color: #fda4af; margin-left: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
+        Sentiment Analysis
+      </button>
+
+      <!-- People Intelligence Toggle Button -->
+      <button class="district-badge" id="btn-people-tracker" style="background: rgba(167, 139, 250, 0.12); border: 1px solid #8b5cf6; color: #c084fc; margin-left: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #c084fc;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        People Intelligence
+      </button>
+
+      <!-- Electoral Tracker Toggle Button -->
+      <button class="district-badge" id="btn-electoral-tracker" style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; color: #a7f3d0; margin-left: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #10b981;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+        Electoral Tracker
+      </button>
+
+      <!-- Comparison Tracker Toggle Button -->
+      <button class="district-badge" id="btn-comparison-tracker" style="background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; color: #bae6fd; margin-left: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #38bdf8;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        Comparison Tracker
+      </button>
+
+      <!-- Intelligence Toggle Button -->
+      <button class="district-badge" id="btn-intelligence-tracker" style="background: rgba(236, 72, 153, 0.12); border: 1px solid #ec4899; color: #fbcfe8; margin-left: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; border-radius: 9999px; padding: 0.2rem 0.6rem; transition: var(--transition-smooth);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #ec4899;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Intelligence
+      </button>
+    </div>
+
+  </header>
+
+  <main>
+    <!-- Left Sidebar: Operations & Statistics -->
+    <aside class="sidebar">
+      
+      <!-- Sidebar District Metadata Card -->
+      <div class="sidebar-meta-card" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0.6rem 0.8rem; border-radius: 8px; margin-bottom: 0.75rem;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+          <span style="font-size: 0.58rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Est. Voters</span>
+          <span id="global-total-voters" style="font-size: 0.85rem; font-weight: 600; color: white;">142,500</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+          <span style="font-size: 0.58rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Target Margin</span>
+          <span id="global-target-margin" style="font-size: 0.85rem; font-weight: 600; color: white;">+4.2% D</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+          <span style="font-size: 0.58rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">District Lean</span>
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">Swing (D+2)</span>
+        </div>
+      </div>
+
+      <!-- Drilldown Context Indicator -->
+      <div class="drilldown-container">
+        <span class="drilldown-label">Resolution Level:</span>
+        <span class="drilldown-step" id="drilldown-status">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span id="drilldown-level-name">Level 1: State View</span>
+        </span>
+      </div>
+      <!-- Overview Statistics Card (Dynamic depending on selection) -->
+      <div class="card" id="detail-panel">
+        <div class="card-title">
+          <span id="panel-title">District Overview</span>
+          <span id="panel-subtitle-badge" class="swing-badge" style="display: none;">SWING PRECINCT</span>
+        </div>
+        
+        <div class="stat-grid">
+          <div class="stat-box">
+            <span class="stat-label" id="label-stat-1">Registered Voters</span>
+            <span class="stat-value" id="val-stat-1">94,300</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label" id="label-stat-2">2022 Turnout %</span>
+            <span class="stat-value success" id="val-stat-2">64.2%</span>
+          </div>
+          <div class="stat-box mt-2">
+            <span class="stat-label" id="label-stat-3">Average Margin</span>
+            <span class="stat-value" id="val-stat-3" style="color: #60a5fa;">+2.4% D</span>
+          </div>
+          <div class="stat-box mt-2">
+            <span class="stat-label" id="label-stat-4">Canvassing Coverage</span>
+            <span class="stat-value" id="val-stat-4">42.8%</span>
+          </div>
+        </div>
+
+        <div class="flex-column mt-2" id="extra-precinct-data" style="display: none;">
+          <div class="flex-row-between" style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Top CRM Issue:</span>
+            <span style="font-size: 0.8rem; font-weight: 600;" id="val-top-issue">Healthcare Accessibility</span>
+          </div>
+          <div class="flex-row-between" style="margin-top: 0.25rem;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Voter Density:</span>
+            <span style="font-size: 0.8rem; font-weight: 600;" id="val-voter-density">High (480 / sq mi)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Chart Card -->
+      <div class="card">
+        <div class="card-title">
+          <span id="chart-title">Estimated Party Lean (District 21)</span>
+          <span style="font-size: 0.7rem; color: var(--text-secondary);">SBE Models</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="precinct-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Walk List Generator Section (Level 4 workhorse) -->
+      <div class="walklist-drawer">
+        <div class="walk-title">
+          <span>Walk List Generator</span>
+          <span class="swing-badge" style="background: rgba(99, 102, 241, 0.15); color: #c7d2fe; border-color: var(--color-primary)">L4 Tool</span>
+        </div>
+        
+        <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3; margin-bottom: 0.6rem;">
+          Zoom in to Precinct level (Level 4) to reveal household dots. Use the drawing toolbar on the map to sketch a polygon around voters.
+        </p>
+
+        <div class="walk-stats">
+          <div>Voters Selected: <strong id="voters-selected-count">0</strong></div>
+          <div>Avg Persuadability: <strong id="avg-persuadability">-</strong></div>
+        </div>
+
+        <button class="btn-primary" id="download-walklist-btn" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV Walk List
+        </button>
+
+        <!-- Preview Selection Box -->
+        <div class="walklist-table-container" id="walklist-table-wrapper" style="display: none;">
+          <table class="walklist-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Lean</th>
+                <th>Persuade %</th>
+              </tr>
+            </thead>
+            <tbody id="walklist-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Right Area: Map Panel and Float Controls -->
+    <div class="map-container-wrapper">
+      
+      <!-- Overlays Toolbar -->
+      <nav class="map-toolbar" id="overlay-toolbar">
+        <button class="toolbar-btn active" data-overlay="turnout">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          Turnout
+        </button>
+        <button class="toolbar-btn" data-overlay="margin">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+          Vote Margin
+        </button>
+        <button class="toolbar-btn" data-overlay="density">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Issue Density
+        </button>
+        <button class="toolbar-btn" data-overlay="canvass">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Canvassing
+        </button>
+        <button class="toolbar-btn" data-overlay="demographics">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Demographics
+        </button>
+      </nav>
+
+      <!-- Floating Map Legend -->
+      <div class="map-legend" id="map-legend-box">
+        <div class="legend-title" id="legend-label">Turnout Rate</div>
+        <div class="legend-scale" id="legend-scale-items">
+          <!-- Populated by JS dynamically based on selected overlay -->
+        </div>
+      </div>
+
+      <!-- Leaflet Map Container -->
+      <div id="map"></div>
+    </div>
+  </main>
+
+  <!-- Fullscreen Demographics Dashboard Overlay (Module 2) -->
+  <div id="demographics-dashboard-overlay" class="demographics-overlay" style="display: none;">
+    <header class="demographics-header">
+      <div class="logo-container">
+        <div class="logo-glow" style="background: var(--color-success); box-shadow: 0 0 12px var(--color-success);"></div>
+        <h1 style="font-size: 1.25rem;">Voter Demographics Dashboard</h1>
+        <span class="district-badge" style="background: rgba(16, 185, 129, 0.15); border-color: var(--color-success); color: #a7f3d0; margin-left: 0.5rem;">Data view</span>
+        
+        <!-- Dashboard Region Selector Dropdown -->
+        <div class="district-dropdown-container" style="margin-left: 1rem;">
+          <button class="district-badge dropdown-trigger" id="demo-district-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Illinois District 21 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="demo-district-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select State / Region</div>
+            <a href="#" class="demo-dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+            
+            <div class="dropdown-header">Select Senatorial District</div>
+            <a href="#" class="demo-dropdown-item active" data-value="sd-21">Illinois District 21</a>
+            <a href="#" class="demo-dropdown-item" data-value="sd-22">Illinois District 22</a>
+            <a href="#" class="demo-dropdown-item" data-value="sd-41">Illinois District 41</a>
+            <a href="#" class="demo-dropdown-item" data-value="sd-42">Illinois District 42</a>
+          </div>
+        </div>
+      </div>
+      <button class="action-btn" id="btn-close-demographics" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); color: #fca5a5; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Return to Map
+      </button>
+    </header>
+
+    <div class="demographics-content">
+      <!-- Left Area: Tabs & Chart -->
+      <div class="demographics-main">
+        <div class="demographics-tabs">
+          <button class="demographics-tab active" data-tab="race">Race & Ethnicity</button>
+          <button class="demographics-tab" data-tab="age">Age & Generation</button>
+          <button class="demographics-tab" data-tab="income">Income</button>
+          <button class="demographics-tab" data-tab="gender">Gender</button>
+          <button class="demographics-tab" data-tab="housing">Housing Tenure</button>
+          <button class="demographics-tab" data-tab="education">Education Level</button>
+        </div>
+        <div class="demographics-chart-wrapper">
+          <div class="chart-header-info">
+            <span class="comparison-title" id="demographics-chart-title">Race & Ethnicity: Census ACS Baseline vs. Voter Rolls</span>
+            <span class="comparison-subtitle">Senatorial Districts 21, 22, 41, 42</span>
+          </div>
+          <div class="demographics-chart-container">
+            <canvas id="demographics-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Area: Insights Card -->
+      <div class="demographics-sidebar">
+        <div class="insight-card">
+          <div class="insight-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-success);"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span>Strategic Campaign Insights</span>
+          </div>
+          <h4 class="insight-title" id="demographics-insight-title">Registration Deficit Target</h4>
+          <p class="insight-description" id="demographics-insight-body">
+            District is 42% Hispanic, but they are under-represented by 18 points on voter rolls. The UI must highlight this registration gap as a primary mobilization target.
+          </p>
+          <div class="insight-cohort-box" style="margin-top: 1rem;">
+            <span class="cohort-label">Primary Swing Cohort:</span>
+            <span class="cohort-value" id="demographics-insight-cohort">Hispanic Voters (Unregistered Gap)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Key Issues Tracker Dashboard Overlay (Module 3/4) -->
+  <div id="issues-tracker-overlay" class="issues-overlay" style="display: none;">
+    <header class="issues-header">
+      <div class="logo-container">
+        <div class="logo-glow" style="background: var(--color-warning); box-shadow: 0 0 12px var(--color-warning);"></div>
+        <h1 style="font-size: 1.25rem;">Senator's Key Issues Tracker</h1>
+        <span class="district-badge" style="background: rgba(234, 179, 8, 0.15); border-color: var(--color-warning); color: #fef08a; margin-left: 0.5rem;">Module 3/4 Priority Matrix</span>
+        
+        <!-- Dashboard Region Selector Dropdown -->
+        <div class="district-dropdown-container" style="margin-left: 1rem;">
+          <button class="district-badge dropdown-trigger" id="issues-district-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Illinois District 21 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="issues-district-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select State / Region</div>
+            <a href="#" class="issues-dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+            
+            <div class="dropdown-header">Select Senatorial District</div>
+            <a href="#" class="issues-dropdown-item active" data-value="sd-21">Illinois District 21</a>
+            <a href="#" class="issues-dropdown-item" data-value="sd-22">Illinois District 22</a>
+            <a href="#" class="issues-dropdown-item" data-value="sd-41">Illinois District 41</a>
+            <a href="#" class="issues-dropdown-item" data-value="sd-42">Illinois District 42</a>
+          </div>
+        </div>
+      </div>
+      <button class="action-btn" id="btn-close-issues" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); color: #fca5a5; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Return to Map
+      </button>
+    </header>
+
+    <div class="issues-content">
+      <!-- Column 1: Priority Matrix & AI Strategic Briefing -->
+      <div class="issues-column">
+        <div class="issues-panel-card">
+          <div class="issues-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-warning);"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            <span>Priority Matrix (Inbound frequency × urgency × feasibility)</span>
+          </div>
+          <p class="issues-card-desc">Click any row below to update the legislative bills, 30-day trends, and AI strategic briefings.</p>
+          <div class="matrix-table-container">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th>Issue Category</th>
+                  <th style="text-align: center;">Mentions</th>
+                  <th style="text-align: center;">Urgency</th>
+                  <th style="text-align: center;">Feasibility</th>
+                  <th style="text-align: center;">Score</th>
+                  <th style="text-align: center;">Trend</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-tbody">
+                <!-- Dynamically populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="issues-panel-card" style="background: rgba(99, 102, 241, 0.03); border: 1px solid rgba(99, 102, 241, 0.2);">
+          <div class="issues-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #818cf8;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span>AI Strategic Intelligence Briefing</span>
+          </div>
+          <div class="briefing-box">
+            <h4 id="issues-briefing-title">Medicaid Spending Briefing</h4>
+            <p id="issues-briefing-text">Healthcare Medicaid reimbursement rates hearing was held on Medicaid expansion. Driven by 43 new constituent contacts in local Waukegan ZIP codes.</p>
+            <div class="briefing-action-box">
+              <span class="briefing-action-label">Orchestrator Recommended Action:</span>
+              <p id="issues-briefing-action">Schedule a town hall in the host precinct to address primary health access concerns.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2: Bill Tracker & Trend Analysis -->
+      <div class="issues-column">
+        <div class="issues-panel-card">
+          <div class="issues-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #60a5fa;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Active Legislative Bill Tracker (ILGA Pipeline)</span>
+          </div>
+          <div class="bill-list" id="bill-tracker-list">
+            <!-- Dynamically populated cards -->
+          </div>
+        </div>
+
+        <div class="issues-panel-card">
+          <div class="issues-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #3b82f6;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            <span>30-Day Mentions Trend Timeline</span>
+          </div>
+          <div class="issues-chart-container">
+            <canvas id="issues-trend-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 3: Jurisdiction Segmentation & Escalations -->
+      <div class="issues-column">
+        <div class="issues-panel-card">
+          <div class="issues-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #f472b6;"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            <span>Jurisdiction Classification</span>
+          </div>
+          <div class="issues-pie-container">
+            <canvas id="issues-jurisdiction-chart"></canvas>
+          </div>
+        </div>
+
+        <div class="issues-panel-card">
+          <div class="issues-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #f43f5e;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+            <span>Legislative Escalation Pathways</span>
+          </div>
+          <p class="issues-card-desc">Local municipal issues showing high frequency escalation triggers recommended for state-level action.</p>
+          <div class="escalation-list" id="issues-escalation-list">
+            <!-- Dynamically populated escalations -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Sentiment Analysis Dashboard Overlay (Module 4) -->
+  <div id="sentiment-analysis-overlay" class="sentiment-overlay" style="display: none;">
+    <header class="sentiment-header">
+      <div class="logo-container">
+        <div class="logo-glow" style="background: var(--color-danger); box-shadow: 0 0 12px var(--color-danger);"></div>
+        <h1 style="font-size: 1.25rem;">Constituent Sentiment & NLP Analysis</h1>
+        <span class="district-badge" style="background: rgba(244, 63, 94, 0.15); border-color: var(--color-danger); color: #fda4af; margin-left: 0.5rem;">Module 4 Ear to the Ground</span>
+        
+        <!-- Dashboard Region Selector Dropdown -->
+        <div class="district-dropdown-container" style="margin-left: 1rem;">
+          <button class="district-badge dropdown-trigger" id="sentiment-district-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Illinois District 21 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="sentiment-district-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select State / Region</div>
+            <a href="#" class="sentiment-dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+            
+            <div class="dropdown-header">Select Senatorial District</div>
+            <a href="#" class="sentiment-dropdown-item active" data-value="sd-21">Illinois District 21</a>
+            <a href="#" class="sentiment-dropdown-item" data-value="sd-22">Illinois District 22</a>
+            <a href="#" class="sentiment-dropdown-item" data-value="sd-41">Illinois District 41</a>
+            <a href="#" class="sentiment-dropdown-item" data-value="sd-42">Illinois District 42</a>
+          </div>
+        </div>
+      </div>
+      <button class="action-btn" id="btn-close-sentiment" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); color: #fca5a5; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Return to Map
+      </button>
+    </header>
+
+    <div class="sentiment-content">
+      <!-- Row 1 Left: Social Media Pulse -->
+      <div class="sentiment-column">
+        <div class="sentiment-panel-card">
+          <div class="sentiment-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #60a5fa;"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
+            <span>Social Media Pulse (Mentions & Alert Baselines)</span>
+          </div>
+          <!-- Alerts Bar -->
+          <div class="sentiment-alert-banner" id="sentiment-social-alert">
+            <span class="alert-indicator yellow"></span>
+            <span class="alert-text" id="social-alert-text">Yellow Alert: Mentions spike detected in health keywords (+2.2 SD)</span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Rolling Average Net Sentiment (-1 to +1):</span>
+            <span style="font-size: 0.95rem; font-weight: 700; color: #10b981;" id="lbl-social-sentiment-score">+0.32</span>
+          </div>
+          
+          <div class="sentiment-chart-container" style="height: 180px; position: relative;">
+            <canvas id="sentiment-social-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Row 2 Left: Polling Approval & Demographic Crosstabs -->
+        <div class="sentiment-panel-card">
+          <div class="sentiment-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #eab308;"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            <span>Polling Approval Ratings & NPS Tracker</span>
+          </div>
+          <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+            <div style="flex: 1; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Approval Rating</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-success);" id="lbl-polling-approval">54.2%</div>
+            </div>
+            <div style="flex: 1; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Net Promoter (NPS)</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: #a7f3d0;" id="lbl-polling-nps">+14 NPS</div>
+            </div>
+          </div>
+          
+          <!-- Demographic Subgroup Crosstab Controls -->
+          <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Demographic Subgroup Approval Crosstabs:</div>
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              <button class="demographic-sub-tab active" data-sub="age">By Age</button>
+              <button class="demographic-sub-tab" data-sub="race">By Race</button>
+              <button class="demographic-sub-tab" data-sub="income">By Income</button>
+              <button class="demographic-sub-tab" data-sub="gender">By Gender</button>
+            </div>
+          </div>
+
+          <div class="sentiment-chart-container" style="height: 160px; position: relative; margin-top: 0.5rem;">
+            <canvas id="sentiment-polling-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 1 Right: Inbound NLP Analyzer -->
+      <div class="sentiment-column">
+        <div class="sentiment-panel-card">
+          <div class="sentiment-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #10b981;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>Inbound Emails & Call NLP Classifier (Gemini 2.0 API Pipeline)</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <p class="sentiment-card-desc">Type or paste raw constituent text below to classify sentiment, priority issues, and highlight distress markers.</p>
+            <textarea id="nlp-input-text" placeholder="Constituent Email Example: I am extremely distressed about the rising prescription drug costs. My senior parents cannot afford their blood pressure medications on their fixed income..." style="width: 100%; min-height: 80px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: white; font-size: 0.75rem; font-family: var(--font-sans); outline: none; box-sizing: border-box; resize: vertical;"></textarea>
+            <button class="action-btn" id="btn-nlp-classify" style="background: var(--color-danger); color: white; padding: 0.4rem; font-weight: 600; cursor: pointer; border: none; border-radius: 6px; font-size: 0.75rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; transition: var(--transition-smooth);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              Run NLP Sentiment Classification
+            </button>
+            
+            <!-- Output JSON -->
+            <div id="nlp-classification-output" style="display: none; background: rgba(0, 0, 0, 0.45); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.25rem;">
+                <span style="font-size: 0.7rem; font-weight: 600; color: #fda4af; text-transform: uppercase;">Classifier JSON Payload:</span>
+                <span class="bill-status-badge in-committee" id="nlp-urgency-badge" style="font-size: 0.65rem; padding: 0.1rem 0.35rem;">URGENCY: HIGH</span>
+              </div>
+              <pre id="nlp-output-json" style="margin: 0; font-family: monospace; font-size: 0.7rem; color: #c084fc; overflow-x: auto; white-space: pre-wrap;"></pre>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Week-over-Week Inbound Volume:</span>
+            <span style="font-weight: 700; color: #fda4af;" id="lbl-inbound-change-pct">+42% spike</span>
+          </div>
+
+          <div class="sentiment-chart-container" style="height: 100px; position: relative;">
+            <canvas id="sentiment-inbound-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Row 2 Right: Town Hall Feedback & AI Sentiment briefing -->
+        <div class="sentiment-panel-card">
+          <div class="sentiment-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #a7f3d0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Town Hall Feedback Q&A Log & AI Briefing</span>
+          </div>
+          
+          <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+            <div style="background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; padding: 0.5rem; font-size: 0.7rem; color: #fca5a5; display: flex; align-items: center; gap: 0.4rem;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <strong>Divergence Alert:</strong> Online healthcare spikes align, but live town hall Q&A centers on local school board ordinances.
+            </div>
+            
+            <!-- Attendance Summary -->
+            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;">
+              <span>Town Hall Attendance (Precinct): <strong style="color: white;" id="lbl-townhall-attendance">148 constituents</strong></span>
+              <span>Avg. Event Rating: <strong style="color: #eab308;" id="lbl-townhall-rating">4.7 / 5.0</strong></span>
+            </div>
+
+            <!-- AI Strategic Sentiment Briefing Paragraphs -->
+            <div class="briefing-box" style="margin-top: 0.5rem; background: rgba(244, 63, 94, 0.03); border: 1px solid rgba(244, 63, 94, 0.15); border-radius: 8px; padding: 0.65rem;">
+              <div style="font-size: 0.75rem; font-weight: 600; color: #fda4af; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                AI Weekly Strategic Sentiment Briefing
+              </div>
+              <p id="sentiment-weekly-briefing" style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.45; margin: 0;">
+                Loading orchestrator briefing paragraph...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS Dependencies -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Leaflet Draw Plugin JS -->
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+  <!-- Leaflet Heatmap Plugin JS -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Core Javascript Logic -->
+  <script src="app.js?v=5"></script>
+
+</body>
+</html>

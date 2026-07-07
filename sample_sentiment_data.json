@@ -1,0 +1,19 @@
+{
+  "rolling_scores": {
+    "healthcare": 0.32,
+    "taxes": -0.65,
+    "education": 0.25,
+    "infrastructure": 0.18,
+    "public_safety": 0.48
+  },
+  "alerts": [
+    {
+      "type": "yellow",
+      "text": "Healthcare mentions elevated (+2.2 SD)"
+    },
+    {
+      "type": "red",
+      "text": "Negative viral thread regarding property tax assessments (+3.4 SD)"
+    }
+  ]
+}

@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evidence Library & Comparative Policy Analysis (Module 7)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    /* Viewport scroll override to allow overall screen scrolling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: auto !important;
+      min-height: 100vh;
+      background: #0a0b12;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      color: var(--text-primary);
+    }
+    .people-overlay {
+      position: relative;
+      width: 100vw;
+      height: auto !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .people-content {
+      overflow-y: visible !important;
+      height: auto !important;
+    }
+    .people-column {
+      overflow: visible !important;
+      height: auto !important;
+    }
+
+    /* Benchmark List Styling */
+    .benchmark-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      background: rgba(15, 17, 26, 0.3);
+    }
+    .benchmark-item {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      padding: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.72rem;
+      align-items: center;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .benchmark-item:last-child {
+      border-bottom: none;
+    }
+    .benchmark-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .benchmark-item.active {
+      background: rgba(56, 189, 248, 0.08);
+      border-left: 3px solid #38bdf8;
+    }
+
+    .badge-gap-red {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 4px;
+      padding: 0.1rem 0.3rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      text-align: center;
+    }
+    .badge-gap-green {
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 4px;
+      padding: 0.1rem 0.3rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      text-align: center;
+    }
+
+    /* Filter buttons styling */
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.65rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #bae6fd;
+    }
+
+    /* Funding Bar Charts */
+    .funding-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .funding-bar-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr 0.8fr;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+    }
+    .funding-bar-bg {
+      height: 8px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .funding-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s;
+    }
+
+    /* Grant items layout */
+    .grant-card {
+      border: 1px solid var(--border-color);
+      background: rgba(15, 17, 26, 0.2);
+      border-radius: 8px;
+      padding: 0.55rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      transition: border-color 0.2s;
+    }
+    .grant-card:hover {
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .grant-badge {
+      font-size: 0.58rem;
+      padding: 0.08rem 0.25rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Peer Rank Visualization */
+    .peer-rank-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .peer-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      position: relative;
+    }
+    .peer-dot.active {
+      background: #38bdf8;
+      color: #0f172a;
+      box-shadow: 0 0 8px #38bdf8;
+    }
+    .peer-dot.state-avg {
+      border: 2px dashed rgba(255,255,255,0.4);
+      background: transparent;
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Fact sheet modal template background is white */
+    .fact-sheet-body {
+      background: #ffffff;
+      color: #0f172a;
+      padding: 2.5rem;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="people-overlay">
+    <!-- Header Controls -->
+    <header class="people-header">
+      <div class="logo-container">
+        <div class="logo-glow" style="background: #38bdf8; box-shadow: 0 0 12px #38bdf8;"></div>
+        <h1 style="font-size: 1.25rem;">Evidence Library & Comparative Policy Analysis</h1>
+        <span class="district-badge" style="background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #bae6fd; margin-left: 0.5rem;">Module 7 Evidence Library</span>
+        
+        <!-- Regional Dropdown Selector -->
+        <div class="district-dropdown-container" style="margin-left: 1rem;">
+          <button class="district-badge dropdown-trigger" id="people-district-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            Illinois District 21 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu" id="people-district-dropdown-menu" style="background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-color); z-index: 2500;">
+            <div class="dropdown-header">Select State / Region</div>
+            <a href="#" class="people-dropdown-item" data-value="state-il">Illinois (Statewide)</a>
+            <div class="dropdown-header">Select Senatorial District</div>
+            <a href="#" class="people-dropdown-item active" data-value="sd-21">Illinois District 21</a>
+            <a href="#" class="people-dropdown-item" data-value="sd-22">Illinois District 22</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="action-btn" id="btn-open-factsheet" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #bae6fd; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Generate Floor Speech Fact Sheet
+        </button>
+        <button class="action-btn" id="btn-close-comparison" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; padding: 0.35rem 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); color: #fca5a5; cursor: pointer; border-radius: 6px; font-weight: 500; font-family: var(--font-sans); transition: var(--transition-smooth);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          Close Window
+        </button>
+      </div>
+    </header>
+
+    <div class="people-content">
+      <!-- Left Column: Benchmarks & State Funding -->
+      <div class="people-column">
+        
+        <!-- Sub-module 1: District vs. State Benchmarks (47 Indicators) -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #38bdf8;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <span>District vs. State Benchmark Library</span>
+          </div>
+          <p class="people-card-desc">Comprehensive audit database comparing local district metrics against the statewide averages. Negatives deficits are highlighted in <span style="color: #f87171;">red</span>.</p>
+          
+          <!-- Category Filter toolbar -->
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+            <button class="filter-btn active" data-filter="all">All Domains (47)</button>
+            <button class="filter-btn" data-filter="economic">Economic Wellbeing</button>
+            <button class="filter-btn" data-filter="educational">Educational Outcomes</button>
+            <button class="filter-btn" data-filter="health">Public Health</button>
+            <button class="filter-btn" data-filter="infrastructure">Infrastructure</button>
+          </div>
+
+          <!-- Search Input -->
+          <input type="text" id="benchmark-search" placeholder="🔍 Search indicators or code symbols..." style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.65rem; color: white; font-size: 0.72rem; font-family: var(--font-sans); margin-bottom: 0.25rem; outline: none; transition: border 0.2s;" />
+
+          <div class="benchmark-container">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; font-size: 0.58rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border-color);">
+              <span>Indicator</span>
+              <span style="text-align: center;">District</span>
+              <span style="text-align: center;">State Avg</span>
+              <span style="text-align: center;">Gap %</span>
+              <span style="text-align: right;">Action</span>
+            </div>
+            <div id="benchmark-list-body">
+              <!-- Dynamically populated items -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-module 2: State Budget & Funding Tracker -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #10b981;"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+            <span>State Appropriations & Per-Capita Funding Analysis</span>
+          </div>
+          <p class="people-card-desc">Tracks per-capita state spending flowing into District 21 schools, infrastructure, and public health grants compared to peer averages.</p>
+          
+          <div class="funding-bar-container" id="funding-distribution-container">
+            <!-- Dynamically populated per capita progress bars -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Peer district comparison & grant tracker -->
+      <div class="people-column">
+        
+        <!-- Dynamic Peer Comparison & Best Practices -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #60a5fa;"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M20 4L4 20"></path></svg>
+            <span>Collar County Peer Group Rankings</span>
+          </div>
+          <p class="people-card-desc">Ranks District 21 among 8 demographic peers (1st to 9th). Select an indicator on the left library to adjust rankings.</p>
+          
+          <div>
+            <div style="font-size: 0.72rem; color: white;" id="lbl-active-indicator-title">Indicator: Uninsured Rate</div>
+            <div class="peer-rank-bar" id="peer-rank-visual-container">
+              <!-- Dynamically populated ranks dots -->
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.58rem; color: var(--text-secondary); margin-top: 0.25rem;">
+              <span>Rank 1 (Best Performance)</span>
+              <span>State Average (Dotted)</span>
+              <span>Rank 9 (Worst Performance)</span>
+            </div>
+          </div>
+
+          <!-- Best Practice Playbook -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
+            <div style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.35rem;">Actionable Best Practices Playbook (Peer precedents):</div>
+            <div id="playbook-precedents-list" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <!-- Curated playbook items -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Untapped Grants Chase Prospectus -->
+        <div class="people-panel-card">
+          <div class="people-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #f59e0b;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Untapped Grants Prospectus & Advocacy Chase</span>
+          </div>
+          <p class="people-card-desc">Inventory of active competitive state grants for schools, non-profits, and agencies where District 21 organisations are eligible but have not yet applied.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;" id="grant-prospectus-list">
+            <!-- Dynamically populated prospectus list -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // Bounding Center for region focus
+    const DISTRICT_CENTERS = {
+      'state-il': [40.1501, -89.0186],
+      'sd-21': [41.7759, -88.1469],
+      'sd-22': [41.9806, -88.3125]
+    };
+
+    let activeDistrictCode = 'sd-21';
+    let activeBenchmarkCode = 'uninsured_rate';
+    let activeFilterCategory = 'all';
+
+    // Mock 47-indicator database
+    const BENCHMARKS_METRICS = {
+      'uninsured_rate': { name: "Uninsured Rate", domain: "health", d21: "14.2%", state: "9.8%", gap: "-44.8%", gapVal: -44.8, source: "IDPH Community Health Profiles", desc: "Percentage of non-elderly residents without basic healthcare coverage.", rankPos: 8, peers: [6.2, 7.4, 8.1, 9.2, 9.8, 10.4, 11.2, 14.2, 15.1] },
+      'household_income': { name: "Median Household Income", domain: "economic", d21: "$78,500", state: "$72,200", gap: "+8.7%", gapVal: 8.7, source: "US Census American Community Survey (ACS)", desc: "Median income range computed across households.", rankPos: 3, peers: [92000, 88000, 78500, 75000, 72200, 71000, 68000, 64000, 59000] },
+      'reading_proficiency': { name: "3rd Grade Reading Proficiency", domain: "educational", d21: "34.2%", state: "39.5%", gap: "-13.4%", gapVal: -13.4, source: "Illinois State Board of Education", desc: "Percentage of third grade students meeting baseline reading metrics.", rankPos: 7, peers: [48.2, 45.1, 41.2, 39.5, 38.0, 36.4, 34.2, 31.0, 28.5] },
+      'pothole_funding': { name: "Per-Capita Infrastructure Grants", domain: "infrastructure", d21: "$320", state: "$415", gap: "-22.9%", gapVal: -22.9, source: "IDOT Appropriations Database", desc: "Per-capita spending distributed for road maintenance.", rankPos: 9, peers: [510, 480, 440, 415, 395, 380, 360, 340, 320] },
+      'poverty_rate': { name: "Individual Poverty Rate", domain: "economic", d21: "12.8%", state: "11.5%", gap: "-11.3%", gapVal: -11.3, source: "US Census ACS", desc: "Percentage of individuals living below the federal poverty line.", rankPos: 6, peers: [6.5, 7.8, 9.2, 10.5, 11.5, 12.8, 13.4, 14.2, 16.5] },
+      'obesity_rate': { name: "Adult Obesity Prevalence", domain: "health", d21: "31.4%", state: "32.1%", gap: "+2.1%", gapVal: 2.1, source: "IDPH Survey Data", desc: "Percentage of adults classified as obese by BMI.", rankPos: 4, peers: [26.2, 28.4, 30.1, 31.4, 32.1, 33.4, 34.8, 36.2, 38.0] },
+      'lead_lines': { name: "Lead Service Water Lines", domain: "infrastructure", d21: "4,200 lines", state: "2,800 lines", gap: "-50.0%", gapVal: -50.0, source: "IEPA Municipal Reporting", desc: "Count of lead-service pipe connections remaining in use.", rankPos: 8, peers: [800, 1200, 1900, 2400, 2800, 3100, 3800, 4200, 5600] }
+    };
+
+    // Budget funding appropriations mock dataset
+    const BUDGET_APPROPRIATIONS = {
+      'sd-21': [
+        { cat: "Education (EBF Formula)", capD21: 847, capState: 1124, capPeer: 1391, col: "#38bdf8" },
+        { cat: "Infrastructure (IDOT Grants)", capD21: 320, capState: 415, capPeer: 490, col: "#10b981" },
+        { cat: "Public Health Funding", capD21: 312, capState: 441, capPeer: 398, col: "#fb7185" },
+        { cat: "Economic Development", capD21: 182, capState: 220, capPeer: 245, col: "#fbbf24" }
+      ],
+      'sd-22': [
+        { cat: "Education (EBF Formula)", capD21: 995, capState: 1124, capPeer: 1391, col: "#38bdf8" },
+        { cat: "Infrastructure (IDOT Grants)", capD21: 430, capState: 415, capPeer: 490, col: "#10b981" },
+        { cat: "Public Health Funding", capD21: 380, capState: 441, capPeer: 398, col: "#fb7185" },
+        { cat: "Economic Development", capD21: 210, capState: 220, capPeer: 245, col: "#fbbf24" }
+      ],
+      'state-il': [
+        { cat: "Education (EBF Formula)", capD21: 1124, capState: 1124, capPeer: 1391, col: "#38bdf8" },
+        { cat: "Infrastructure (IDOT Grants)", capD21: 415, capState: 415, capPeer: 490, col: "#10b981" },
+        { cat: "Public Health Funding", capD21: 441, capState: 441, capPeer: 398, col: "#fb7185" },
+        { cat: "Economic Development", capD21: 220, capState: 220, capPeer: 245, col: "#fbbf24" }
+      ]
+    };
+
+    // Curated best practices playbook
+    const PLAYBOOK_MOCK = [
+      { key: "uninsured_rate", dist: "SD-29 (Morrison)", action: "Lake County Mobile Health Unit grants", outcome: "Reduced uninsured rate by 4.2% in Waukegan target zones.", pathway: "Co-sponsored IDPH special appropriations rider.", feasibility: "High Feasibility", feasClass: "badge-gap-green" },
+      { key: "reading_proficiency", dist: "SD-28 (Murphy)", action: "Early Literacy Community tutoring hubs", outcome: "Boosted reading scores by 8.4% over 2 years.", pathway: "ISBE Block Grant matching application.", feasibility: "Medium Feasibility", feasClass: "badge-gap-green" },
+      { key: "pothole_funding", dist: "SD-25 (Castro)", action: "Municipal IDOT Fast-Track matching grants", outcome: "Secured $14.2M additional road maintenance funds.", pathway: "IDOT local government project partnership.", feasibility: "High Feasibility", feasClass: "badge-gap-green" },
+      { key: "lead_lines", dist: "SD-30 (Villa)", action: "IEPA Lead Line replacement financing model", outcome: "Replaced 1,800 service lines in Kane county municipalities.", pathway: "State revolving loan fund application.", feasibility: "Medium Feasibility", feasClass: "badge-gap-green" }
+    ];
+
+    // Untapped grants catalog
+    const GRANTS_PROSPECTUS = [
+      { name: "ISBE Early Literacy Support Grant", agency: "ISBE Educational Grants", amount: "$2,400,000", deadline: "July 24, 2026", status: "Untapped Prospect", match: "94% Match", eligibility: "Title I Schools" },
+      { name: "IEPA Lead Service Replacement Fund", agency: "IEPA Environmental Division", amount: "$1,800,000", deadline: "August 15, 2026", status: "Untapped Prospect", match: "89% Match", eligibility: "Municipalities" },
+      { name: "IDPH Mental Health Community Service", agency: "IDPH Health Bureau", amount: "$850,000", deadline: "Sept 10, 2026", status: "Untapped Prospect", match: "91% Match", eligibility: "Health Non-Profits" }
+    ];
+
+    // Floor speech templating
+    const SPEECH_TEMPLATES = {
+      'education': {
+        title: "Education Funding Disparity Speech",
+        text: `<strong>Mr. President, members of the body:</strong><br/><br/>
+               I rise today to call attention to a structural disparity affecting the families of Illinois District 21.<br/><br/>
+               According to the Illinois State Board of Education, third grade reading proficiency in my district sits at <strong>34.2%</strong>—which is <strong>13.4% below</strong> the state average of 39.5%. This is not a gap of ability. It is a gap of investment.<br/><br/>
+               Our state spending records show that District 21 receives <strong>$847 per capita</strong> in education formulas compared to a statewide baseline of $1,124. That is a per-capita education funding deficit of <strong>$277 per student</strong>.<br/><br/>
+               Our neighbors in Senate District 28 have bridged this gap by securing early literacy tutoring block grants through local matching formulas. It is time we ensure District 21 students receive the exact same equity of access. I urge the committee to adopt my amendment to formulas allocating resources to collar county school districts.`
+      },
+      'healthcare': {
+        title: "Healthcare Access & Insurance Gap Speech",
+        text: `<strong>Mr. President, members of the body:</strong><br/><br/>
+               We often debate healthcare in the abstract, but the data in the state's community health profiles tells a very specific story of inequity in District 21.<br/><br/>
+               The uninsured rate in my district is <strong>14.2%</strong>. The state average is 9.8%. That means District 21 residents are <strong>44.8% more likely</strong> to live without health insurance than the average Illinoisan.<br/><br/>
+               At the same time, state agency budgets show my district receives only <strong>$312 per resident</strong> in state public health funding, compared to a state average of $441. That is a public health funding deficit of <strong>$129 per citizen</strong>.<br/><br/>
+               Comparable collar county districts like Senate District 29 have successfully addressed this by establishing local mobile health clinic hubs funded through co-sponsored IDPH special appropriations. I am introducing legislation today to replicate that exact program and close this indefensible funding gap.`
+      },
+      'infrastructure': {
+        title: "Infrastructure Funding Deficit Speech",
+        text: `<strong>Mr. President, members of the body:</strong><br/><br/>
+               Every senator in this chamber hears from constituents about crumbling roads and delayed repairs. But in District 21, the data shows this is not just an inconvenience—it is a funding disparity.<br/><br/>
+               My district receives only <strong>$320 per capita</strong> in IDOT road maintenance grants, compared to a state baseline of $415. That is a deficit of <strong>22.9% per resident</strong>.<br/><br/>
+               Furthermore, my district has over <strong>4,200 lead-service water lines</strong> remaining in use, which is <strong>50% higher</strong> than the state average of 2,800 lines.<br/><br/>
+               We do not need to look far for solutions. Senate District 25 secured Fast-Track municipal matching grants to replace crumbling infrastructure, and Senate District 30 utilized IEPA revolving fund loans to retire lead service pipes. I call on IDOT and IEPA to align their funding formulas to guarantee that District 21 receives its fair share of infrastructure investment.`
+      }
+    };
+
+    // Render Benchmarks list
+    function renderBenchmarksList() {
+      const listContainer = document.getElementById("benchmark-list-body");
+      if (!listContainer) return;
+      listContainer.innerHTML = "";
+
+      const query = document.getElementById("benchmark-search").value.toLowerCase();
+
+      Object.keys(BENCHMARKS_METRICS).forEach(key => {
+        const item = BENCHMARKS_METRICS[key];
+        
+        // Filter checks
+        if (activeFilterCategory !== 'all' && item.domain !== activeFilterCategory) return;
+        if (query && !item.name.toLowerCase().includes(query) && !item.source.toLowerCase().includes(query)) return;
+
+        const isNegative = item.gap.startsWith('-');
+        const gapClass = isNegative ? 'badge-gap-red' : 'badge-gap-green';
+
+        const row = document.createElement("div");
+        row.className = `benchmark-item ${activeBenchmarkCode === key ? 'active' : ''}`;
+        row.onclick = () => {
+          activeBenchmarkCode = key;
+          renderBenchmarksList();
+          renderPeerRankings();
+          renderPlaybookPrecedents();
+        };
+
+        row.innerHTML = `
+          <div><strong>${item.name}</strong><div style="font-size: 0.58rem; color: var(--text-secondary);">${item.source}</div></div>
+          <td style="text-align: center;">${item.d21}</td>
+          <td style="text-align: center;">${item.state}</td>
+          <td style="text-align: center;"><span class="${gapClass}">${item.gap}</span></td>
+          <td style="text-align: right;"><button style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); color: #bae6fd; font-size: 0.58rem; padding: 0.1rem 0.35rem; border-radius: 4px; cursor: pointer;">Select</button></td>
+        `;
+
+        listContainer.appendChild(row);
+      });
+    }
+
+    // Render per capita appropriations bars
+    function renderAppropriationsBars() {
+      const container = document.getElementById("funding-distribution-container");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const currentData = BUDGET_APPROPRIATIONS[activeDistrictCode] || BUDGET_APPROPRIATIONS['sd-21'];
+
+      currentData.forEach(item => {
+        const pctD21 = ((item.capD21 / item.capPeer) * 100).toFixed(0);
+        const pctState = ((item.capState / item.capPeer) * 100).toFixed(0);
+
+        const row = document.createElement("div");
+        row.className = "funding-bar-row";
+        row.innerHTML = `
+          <div><strong>${item.cat}</strong></div>
+          <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+            <!-- District 21 bar -->
+            <div style="display: flex; align-items: center; gap: 0.3rem;">
+              <span style="font-size: 0.58rem; color: var(--text-secondary); width: 25px;">D21:</span>
+              <div class="funding-bar-bg" style="flex: 1;">
+                <div class="funding-bar-fill" style="width: ${pctD21}%; background: ${item.col};"></div>
+              </div>
+            </div>
+            <!-- State Average bar -->
+            <div style="display: flex; align-items: center; gap: 0.3rem;">
+              <span style="font-size: 0.58rem; color: var(--text-secondary); width: 25px;">State:</span>
+              <div class="funding-bar-bg" style="flex: 1;">
+                <div class="funding-bar-fill" style="width: ${pctState}%; background: rgba(255,255,255,0.2);"></div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: right; font-weight: 600; color: white;">$${item.capD21}<div style="font-size: 0.55rem; color: var(--text-secondary);">vs $${item.capState} avg</div></div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // Render peer ranking visual
+    function renderPeerRankings() {
+      const container = document.getElementById("peer-rank-visual-container");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const activeMetric = BENCHMARKS_METRICS[activeBenchmarkCode];
+      if (!activeMetric) return;
+
+      document.getElementById("lbl-active-indicator-title").innerText = `Active Indicator: ${activeMetric.name} (${activeMetric.source})`;
+
+      // Create 9 dots corresponding to District 21 and its 8 peers
+      for (let i = 1; i <= 9; i++) {
+        const dot = document.createElement("div");
+        dot.className = "peer-dot";
+        dot.innerText = i;
+        
+        // Mark District 21 position
+        if (i === activeMetric.rankPos) {
+          dot.classList.add("active");
+          dot.innerHTML = `<strong>D21</strong>`;
+          dot.style.width = "28px";
+          dot.style.height = "28px";
+          dot.style.borderRadius = "14px";
+          dot.style.fontSize = "0.6rem";
+          dot.title = `District 21 is ranked ${i} out of 9 peers.`;
+        }
+
+        // Draw State Average baseline indicator between peers
+        if (i === 5) {
+          const stateDot = document.createElement("div");
+          stateDot.className = "peer-dot state-avg";
+          stateDot.title = "Illinois State Average Baseline";
+          container.appendChild(stateDot);
+        }
+
+        container.appendChild(dot);
+      }
+    }
+
+    // Render Playbook precedents
+    function renderPlaybookPrecedents() {
+      const container = document.getElementById("playbook-precedents-list");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const playbookItems = PLAYBOOK_MOCK.filter(p => p.key === activeBenchmarkCode);
+
+      if (playbookItems.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.7rem; color: var(--text-secondary); font-style: italic;">No active peer best-practices registered for this benchmark. Select "Uninsured Rate", "3rd Grade Reading", "Per-Capita Infrastructure", or "Lead Lines" to view curated models.</div>`;
+        return;
+      }
+
+      playbookItems.forEach(p => {
+        const div = document.createElement("div");
+        div.style.background = "rgba(255,255,255,0.02)";
+        div.style.border = "1px solid rgba(56, 189, 248, 0.15)";
+        div.style.borderRadius = "8px";
+        div.style.padding = "0.55rem";
+        div.style.fontSize = "0.72rem";
+
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <strong style="color: #38bdf8;">${p.dist}: ${p.action}</strong>
+            <span class="grant-badge ${p.feasClass}">${p.feasibility}</span>
+          </div>
+          <div style="color: #cbd5e1; margin-bottom: 0.2rem;">Outcome: <span style="color: white;">${p.outcome}</span></div>
+          <div style="font-size: 0.65rem; color: var(--text-secondary);">Pathway: <strong>${p.pathway}</strong></div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Render untapped grant prospectus
+    function renderGrantProspectus() {
+      const container = document.getElementById("grant-prospectus-list");
+      if (!container) return;
+      container.innerHTML = "";
+
+      GRANTS_PROSPECTUS.forEach((g, idx) => {
+        const div = document.createElement("div");
+        div.className = "grant-card";
+        div.innerHTML = `
+          <div>
+            <strong>${g.name}</strong>
+            <div style="font-size: 0.62rem; color: var(--text-secondary); margin-top: 0.15rem;">
+              Agency: <strong>${g.agency}</strong> | Deadline: <span style="color: #fb7185;">${g.deadline}</span>
+            </div>
+            <div style="font-size: 0.62rem; color: #cbd5e1; margin-top: 0.15rem;">
+              Target Match: <strong style="color: #34d399;">${g.match}</strong> | Eligible: <strong>${g.eligibility}</strong>
+            </div>
+          </div>
+          <div style="text-align: right; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: white;">${g.amount}</span>
+            <button onclick="triggerDraftLetter('${g.name}')" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fef08a; font-size: 0.6rem; padding: 0.2rem 0.4rem; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Draft Support Letter</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Trigger support letter modal
+    function triggerDraftLetter(grantName) {
+      alert(`[LETTER GENERATOR ACTIVE]\n\nDrafted official support letter template from Senator Edly Allen's office for the "${grantName}".\n\nTemplate loaded into system clipboard and sent to campaign communications queue.`);
+    }
+
+    // DOMContentLoaded setup
+    document.addEventListener("DOMContentLoaded", () => {
+      // Close Window
+      const closeBtn = document.getElementById("btn-close-comparison");
+      if (closeBtn) {
+        closeBtn.onclick = () => {
+          window.close();
+        };
+      }
+
+      // Dropdown toggle
+      const trigger = document.getElementById("people-district-btn");
+      const menu = document.getElementById("people-district-dropdown-menu");
+      if (trigger && menu) {
+        trigger.onclick = (e) => {
+          e.stopPropagation();
+          const visible = menu.style.display === "block";
+          menu.style.display = visible ? "none" : "block";
+        };
+        document.addEventListener("click", () => {
+          menu.style.display = "none";
+        });
+      }
+
+      // Region click
+      const items = document.querySelectorAll(".people-dropdown-item");
+      items.forEach(mi => {
+        mi.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          items.forEach(x => x.classList.remove("active"));
+          mi.classList.add("active");
+          
+          const val = mi.getAttribute("data-value");
+          const text = mi.innerText;
+          
+          if (trigger) {
+            trigger.innerHTML = `${text} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: 4px; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+          }
+          menu.style.display = "none";
+          
+          activeDistrictCode = val;
+          renderAppropriationsBars();
+        };
+      });
+
+      // Filter category buttons
+      const filters = document.querySelectorAll(".filter-btn");
+      filters.forEach(f => {
+        f.onclick = () => {
+          filters.forEach(x => x.classList.remove("active"));
+          f.classList.add("active");
+          activeFilterCategory = f.getAttribute("data-filter");
+          renderBenchmarksList();
+        };
+      });
+
+      // Search bindings
+      document.getElementById("benchmark-search").addEventListener("input", renderBenchmarksList);
+
+      // Open Fact Sheet modal
+      const openFactsheetBtn = document.getElementById("btn-open-factsheet");
+      const closeFactsheetBtn = document.getElementById("btn-close-factsheet");
+      const factsheetModal = document.getElementById("factsheet-modal");
+
+      if (openFactsheetBtn && factsheetModal) {
+        openFactsheetBtn.onclick = () => {
+          factsheetModal.style.display = "flex";
+          selectSpeechTopic('healthcare'); // default to health
+        };
+      }
+
+      if (closeFactsheetBtn && factsheetModal) {
+        factsheetModal.onclick = (e) => {
+          if (e.target === factsheetModal || e.target === closeFactsheetBtn) {
+            factsheetModal.style.display = "none";
+          }
+        };
+        closeFactsheetBtn.onclick = () => {
+          factsheetModal.style.display = "none";
+        };
+      }
+
+      // Render dashboard contents on load
+      renderBenchmarksList();
+      renderAppropriationsBars();
+      renderPeerRankings();
+      renderPlaybookPrecedents();
+      renderGrantProspectus();
+    });
+
+    // Speech template selector
+    function selectSpeechTopic(topic) {
+      const template = SPEECH_TEMPLATES[topic];
+      if (!template) return;
+
+      // Update button styling
+      document.querySelectorAll(".speech-tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(`btn-speech-tab-${topic}`).classList.add("active");
+
+      document.getElementById("speech-title").innerText = template.title;
+      document.getElementById("speech-content-box").innerHTML = template.text;
+    }
+  </script>
+
+  <!-- Floor Speech Fact Sheet Generator (White Background Popup Modal) -->
+  <div id="factsheet-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 11, 18, 0.75); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div style="background: #ffffff; width: 70vw; height: 80vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
+      
+      <!-- Modal Header -->
+      <div class="white-modal-header" style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+        <div>
+          <h3 class="white-modal-title" style="font-size: 1.1rem; color: #0f172a; font-weight: 700; font-family: var(--font-sans);">Floor Speech Fact Sheet Generator</h3>
+          <span style="font-size: 0.7rem; color: #64748b;">Transforms District 21 benchmark disparities and public spending deficits into structured floor speech drafts.</span>
+        </div>
+        <button id="btn-close-factsheet" style="background: #ef4444; border: none; color: white; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans);">Close Generator</button>
+      </div>
+
+      <!-- Selector Tabs -->
+      <div style="background: #f1f5f9; padding: 0.5rem 1.25rem; display: flex; gap: 0.5rem; border-bottom: 1px solid #e2e8f0;">
+        <button id="btn-speech-tab-healthcare" class="filter-btn speech-tab-btn active" style="color: #0f172a;" onclick="selectSpeechTopic('healthcare')">Public Health Deficit Speech</button>
+        <button id="btn-speech-tab-education" class="filter-btn speech-tab-btn" style="color: #0f172a;" onclick="selectSpeechTopic('education')">Education Funding Gap Speech</button>
+        <button id="btn-speech-tab-infrastructure" class="filter-btn speech-tab-btn" style="color: #0f172a;" onclick="selectSpeechTopic('infrastructure')">Infrastructure Spending Disparity Speech</button>
+      </div>
+
+      <!-- Modal Body (Printable Fact Sheet Sheet) -->
+      <div style="flex: 1; overflow-y: auto; background: #ffffff;">
+        <div class="fact-sheet-body" id="fact-sheet-print-area">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+            <div>
+              <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #0f172a; font-family: var(--font-sans);">OFFICIAL FACT SHEET & POLICY POSITION</h2>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 500; text-transform: uppercase;">Illinois Senate District 21 • Senator Edly Allen</span>
+            </div>
+            <div style="text-align: right; font-size: 0.7rem; color: #64748b;">
+              Source: IEPA / IDPH / ISBE Database<br/>
+              Last Updated: July 2026
+            </div>
+          </div>
+
+          <h3 id="speech-title" style="margin: 0 0 1rem 0; font-size: 1.15rem; color: #0f172a; font-family: var(--font-sans); border-left: 4px solid #38bdf8; padding-left: 0.5rem;">Public Health Deficit Speech</h3>
+          <p id="speech-content-box" style="font-size: 0.82rem; color: #334155; text-align: justify; margin: 0; white-space: pre-line;">
+            <!-- Text content populated dynamically -->
+          </p>
+
+          <div style="margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1rem; font-size: 0.68rem; color: #64748b; display: flex; justify-content: space-between;">
+            <span>Generated autonomously via Module 7 Campaign Evidence Library</span>
+            <span>Citations and state ledger index references attached.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 0.75rem 1.25rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button onclick="window.print()" style="background: #0f172a; border: none; color: white; border-radius: 6px; padding: 0.4rem 0.85rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans);">Print Fact Sheet</button>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
