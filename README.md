@@ -1,6 +1,6 @@
-# VikVox Kitchen: Campaign Platform - Module 1 (Constituency Overview)
+# Electoral Campaign Dashboard
 
-An honors-quality, highly interactive legislative campaign dashboard built for **Illinois Senatorial District 21** operations. This module provides a single-pane-of-glass overview of constituency statistics, turnout projections, vote margins, issue density heat maps, and a walk list generator drawing workbench.
+This campaign dashboard built for **Illinois Senatorial District 21, 22, 41, 42** operations. This provides a single-pane-of-glass overview of constituency statistics, turnout projections, vote margins, issue density heat maps, and a walk list generator drawing workbench.
 
 ---
 
@@ -26,7 +26,7 @@ The system implements a clean separation of concerns:
 ## 📂 Codebase Directory Structure
 
 ```text
-VikVox Kitchen/
+Dashboard/
 ├── index.html       # Primary UI dashboard grid structure & static CDN imports
 ├── app.css          # Glassmorphic dark styling design variables & animation tokens
 ├── app.js           # Leaflet layers, toolbars, chart controls, and PIP ray-cast engine
@@ -81,9 +81,9 @@ Since the frontend has built-in mockup generators, you can run a local HTTP serv
 
 ```bash
 # In the project directory, spin up a Python web server
-python3 -m http.server 8000
+python3 -m http.server 8080
 ```
-Open **[http://localhost:8000](http://localhost:8000)** in your browser.
+Open **[http://localhost:8080](http://localhost:8080)** in your browser.
 
 ### Option B: Node.js Express Mode
 1. Install Express and PostgreSQL packages:
@@ -95,5 +95,4 @@ Open **[http://localhost:8000](http://localhost:8000)** in your browser.
    node server.js
    ```
 Open **[http://localhost:5000](http://localhost:5000)** in your browser.
-# Electoral-Intelligence-Dashboard
 # Electoral-Intelligence-Dashboard
