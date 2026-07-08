@@ -4,7 +4,7 @@ A full-stack electoral intelligence dashboard for **Illinois Senatorial District
 
 ---
 
-**Live Demo (GitHub Pages)**: [https://bhavyasharma17.github.io/Electoral-Intelligence-Dashboard/](https://bhavyasharma17.github.io/Electoral-Intelligence-Dashboard/)
+**Live Demo (GitHub Pages)**: ([https://bhavyasharma17.github.io/Electoral-Intelligence-Dashboard/](https://bhavyas17.github.io/Electoral-Intelligence-Dashboard/))
 
 ---
 
