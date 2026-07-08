@@ -297,7 +297,7 @@ Follow these steps exactly in order.
 
 ```bash
 git clone https://github.com/bhavyas17/Electoral-Intelligence-Dashboard.git
-cd vikvox-kitchen
+
 ```
 
 ---
