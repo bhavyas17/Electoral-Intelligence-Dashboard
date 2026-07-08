@@ -1,4 +1,4 @@
-// Node.js Backend Server for VikVox Campaign Platform - Module 1 (Constituency Overview)
+// Node.js Backend Server for Electoral Intelligence Dashboard - Module 1 (Constituency Overview)
 // Tech Stack: Node.js, Express, pg (PostgreSQL Client with PostGIS support)
 
 const express = require('express');
@@ -217,7 +217,7 @@ app.get('*', (req, res) => {
 // Run server listener
 app.listen(PORT, () => {
   console.log(`================================================================`);
-  console.log(` VikVox Campaign Platform - Module 1 Active`);
+  console.log(` Electoral Intelligence Dashboard Active`);
   console.log(` Listening on PORT: ${PORT}`);
   console.log(` Server URL: http://localhost:${PORT}`);
   console.log(`================================================================`);
