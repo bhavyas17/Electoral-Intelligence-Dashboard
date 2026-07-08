@@ -1,4 +1,4 @@
--- PostGIS database schema for VikVox Campaign Platform - Module 1 (Constituency Overview)
+-- PostGIS database schema for Electoral Intelligence Dashboard - Module 1 (Constituency Overview)
 -- Target Database: PostgreSQL with PostGIS extension enabled
 
 -- Enable PostGIS Extension
