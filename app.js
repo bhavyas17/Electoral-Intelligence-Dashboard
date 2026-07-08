@@ -1,4 +1,4 @@
-// VikVox Kitchen - Module 1 (Constituency Overview) Map Logic
+// Electoral Intelligence Dashboard - Module 1 (Constituency Overview) Map Logic
 
 // --- Global Variables & Leaflet Setup ---
 let map;
