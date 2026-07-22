@@ -1,0 +1,31 @@
+{
+  "__maintenance_note__": "IMPORTANT: Any future updates to the election structure data should be made by editing the source Excel workbook and re-exporting it to JSON in this same format, rather than hand-editing this file directly...",
+  "federal": [
+    {
+      "office": "President",
+      "term_length": "4 years",
+      "term_limit": "Max 2 elected terms (22nd Amendment); max 10 years total...",
+      "mode_of_election": "Indirect election via Electoral College...",
+      "basis_of_representation": "National popular vote is NOT decisive on its own...",
+      "key_issues": "Popular-vote vs. Electoral-College divergence..."
+    },
+    ...
+  ],
+  "states": [
+    {
+      "state": "Alabama",
+      "capital": "Montgomery",
+      "governor_term_years": 4,
+      "governor_term_limit": "2 consecutive terms",
+      "legislature_type": "Bicameral",
+      "senate_name": "State Senate",
+      "senate_term_years": 4,
+      "senate_term_limit": "None",
+      "lower_chamber_name": "House of Representatives",
+      "lower_chamber_term_years": 4,
+      "lower_chamber_term_limit": "None",
+      "notes": null
+    },
+    ...
+  ]
+}
