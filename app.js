@@ -934,7 +934,7 @@ function setupEventListeners() {
     });
   }
 
-  // Knowledge Base dropdown menu toggle
+    // Knowledge Base dropdown menu toggle
   const kbTrigger = document.getElementById("btn-knowledge-base");
   const kbMenu = document.getElementById("knowledge-base-dropdown-menu");
   if (kbTrigger && kbMenu) {
@@ -952,55 +952,254 @@ function setupEventListeners() {
   const kbClose = document.getElementById("btn-close-kb-modal");
   const kbOptFederal = document.getElementById("kb-opt-federal");
   const kbOptState = document.getElementById("kb-opt-state");
+  const kbTabFederal = document.getElementById("kb-tab-federal");
+  const kbTabState = document.getElementById("kb-tab-state");
+  let cachedKbData = null;
+  let kbActiveTab = "federal";
+  let lastFocusedElement = null;
+  // Render active tab functions
+  function renderActiveTab() {
+    if (!kbContent || !cachedKbData) return;
+    kbContent.innerHTML = "";
+    if (kbActiveTab === "federal") {
+      // Federal tab content: show 5 federal entries as a set of stacked cards
+      const fedList = cachedKbData.federal || [];
+      const div = document.createElement("div");
+      div.style.display = "flex";
+      div.style.flexDirection = "column";
+      div.style.gap = "1rem";
+      div.innerHTML = fedList.map(f => `
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+          <h4 style="color: #14b8a6; margin-top: 0; margin-bottom: 0.5rem; font-size: 0.95rem; font-weight: 600; font-family: var(--font-sans);">${f.office}</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.76rem; color: #cbd5e1;">
+            <div><strong style="color: var(--text-secondary);">Term Length:</strong> ${f.term_length}</div>
+            <div><strong style="color: var(--text-secondary);">Term Limit:</strong> ${f.term_limit}</div>
+            <div><strong style="color: var(--text-secondary);">Mode of Election:</strong> ${f.mode_of_election}</div>
+            <div><strong style="color: var(--text-secondary);">Basis of Representation:</strong> ${f.basis_of_representation}</div>
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.76rem; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 0.5rem; color: #cbd5e1; line-height: 1.4;">
+            <strong style="color: var(--text-secondary);">Key Issues & Concepts:</strong> ${f.key_issues}
+          </div>
+        </div>
+      `).join("");
+      kbContent.appendChild(div);
+      // Re-enable focus updates inside modal
+      updateModalFocusTrap();
+    } else {
+      // State tab content: show selector and profile area
+      const stateList = cachedKbData.states || [];
+      // Sort state list alphabetically just to be sure
+      stateList.sort((a, b) => a.state.localeCompare(b.state));
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = `
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 0.25rem;">
+            <label style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Search State</label>
+            <input type="text" id="kb-state-search" placeholder="Type to filter..." style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.8rem; outline: none; font-family: var(--font-sans); transition: border-color 0.2s; width: 100%;" />
+          </div>
+          <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.25rem;">
+            <label style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Select State</label>
+            <select id="kb-state-select" style="background: #111827; border: 1px solid var(--border-color); color: white; border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.8rem; outline: none; font-family: var(--font-sans); cursor: pointer; width: 100%;">
+              ${stateList.map(s => `<option value="${s.state}">${s.state}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <div id="kb-state-profile" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-top: 0.5rem;">
+          <!-- Injected dynamically -->
+        </div>
+      `;
+      kbContent.appendChild(wrapper);
+      const stateSelect = document.getElementById("kb-state-select");
+      const stateSearch = document.getElementById("kb-state-search");
+      const stateProfile = document.getElementById("kb-state-profile");
+      function updateStateProfile(selectedStateName) {
+        if (!stateProfile) return;
+        const state = stateList.find(s => s.state === selectedStateName);
+        if (!state) return;
+        stateProfile.innerHTML = `
+          <h3 style="color: #38bdf8; margin-top: 0; margin-bottom: 0.75rem; font-size: 1.1rem; font-weight: 700; font-family: var(--font-sans); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
+            ${state.state}
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 400;">Capital: <strong style="color: white;">${state.capital}</strong></span>
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; font-size: 0.8rem; color: #cbd5e1;">
+            <div>
+              <h4 style="color: #38bdf8; font-size: 0.85rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.25rem; font-family: var(--font-sans);">Executive Branch</h4>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div><strong style="color: var(--text-secondary);">Governor Term:</strong> ${state.governor_term_years} years</div>
+                <div><strong style="color: var(--text-secondary);">Governor Term Limit:</strong> ${state.governor_term_limit}</div>
+              </div>
+            </div>
+            <div>
+              <h4 style="color: #38bdf8; font-size: 0.85rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.25rem; font-family: var(--font-sans);">Legislative Structure</h4>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div><strong style="color: var(--text-secondary);">Structure Type:</strong> ${state.legislature_type}</div>
+                <div><strong style="color: var(--text-secondary);">Upper Chamber (${state.senate_name}):</strong> Term: ${state.senate_term_years} yrs | Limit: ${state.senate_term_limit}</div>
+                ${state.legislature_type.toLowerCase() === "bicameral" && state.lower_chamber_name !== "—" ? `
+                  <div><strong style="color: var(--text-secondary);">Lower Chamber (${state.lower_chamber_name}):</strong> Term: ${state.lower_chamber_term_years} yrs | Limit: ${state.lower_chamber_term_limit}</div>
+                ` : ""}
+              </div>
+            </div>
+          </div>
+          ${state.notes ? `
+          <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.76rem; line-height: 1.4; color: #bae6fd;">
+            <strong>Special Notes:</strong> ${state.notes}
+          </div>
+          ` : ''}
+        `;
+      }
+      // Default selected state is the first one (Alabama)
+      if (stateSelect && stateList.length > 0) {
+        stateSelect.value = stateList[0].state;
+        updateStateProfile(stateList[0].state);
+        stateSelect.addEventListener("change", () => {
+          updateStateProfile(stateSelect.value);
+        });
+      }
+      // Live search filter input logic
+      if (stateSearch && stateSelect) {
+        stateSearch.addEventListener("input", () => {
+          const query = stateSearch.value.trim().toLowerCase();
+          stateSelect.innerHTML = "";
+          
+          const filtered = stateList.filter(s => s.state.toLowerCase().includes(query));
+          filtered.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s.state;
+            opt.innerText = s.state;
+            stateSelect.appendChild(opt);
+          });
+          if (filtered.length > 0) {
+            stateSelect.value = filtered[0].state;
+            updateStateProfile(filtered[0].state);
+          } else {
+            stateProfile.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 1.5rem; font-size: 0.8rem;">No matching states found.</div>`;
+          }
+        });
+      }
+      // Re-enable focus updates inside modal
+      updateModalFocusTrap();
+    }
+  }
+  // Load state or federal database from external JSON file
+  function fetchKbDataAndRender() {
+    if (cachedKbData) {
+      renderActiveTab();
+      return;
+    }
+    if (kbContent) {
+      kbContent.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: var(--text-secondary); font-size: 0.85rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin-animation" style="margin-bottom: 0.5rem; display: inline-block;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+          <br/>Loading election guide database...
+        </div>
+      `;
+    }
+    fetch("election_structure_data.json")
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch JSON data file");
+        return res.json();
+      })
+      .then(data => {
+        cachedKbData = data;
+        renderActiveTab();
+      })
+      .catch(err => {
+        console.error("Knowledge base fetch error: ", err);
+        if (kbContent) {
+          kbContent.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); border-radius: 8px; font-size: 0.85rem;">
+              <strong>Error:</strong> Unable to load knowledge base content. Please try again later.
+            </div>
+          `;
+        }
+      });
+  }
+  // Show/Hide Modal triggers
+  function openKbModal(tab = "federal") {
+    lastFocusedElement = document.activeElement;
+    kbActiveTab = tab;
+    // Set active tab styling
+    if (kbTabFederal && kbTabState) {
+      if (tab === "federal") {
+        kbTabFederal.style.borderBottomColor = "#14b8a6";
+        kbTabFederal.style.color = "white";
+        kbTabFederal.style.fontWeight = "600";
+        
+        kbTabState.style.borderBottomColor = "transparent";
+        kbTabState.style.color = "var(--text-secondary)";
+        kbTabState.style.fontWeight = "500";
+      } else {
+        kbTabState.style.borderBottomColor = "#14b8a6";
+        kbTabState.style.color = "white";
+        kbTabState.style.fontWeight = "600";
+        
+        kbTabFederal.style.borderBottomColor = "transparent";
+        kbTabFederal.style.color = "var(--text-secondary)";
+        kbTabFederal.style.fontWeight = "500";
+      }
+    }
+    if (kbModal) {
+      kbModal.style.display = "flex";
+      fetchKbDataAndRender();
+      document.addEventListener("keydown", handleModalKeyDown);
+    }
+  }
+  function closeKbModal() {
+    if (kbModal) {
+      kbModal.style.display = "none";
+      document.removeEventListener("keydown", handleModalKeyDown);
+      if (lastFocusedElement) {
+        lastFocusedElement.focus();
+      }
+    }
+  }
+  // Trap keyboard focus inside modal (Step 8 accessibility)
+  const focusableSelectors = 'button, [href], input, select, textarea, [tabindex="0"]';
+  let focusElements = [];
+  let firstFocusElement = null;
+  let lastFocusElement = null;
+  function updateModalFocusTrap() {
+    if (!kbModal) return;
+    focusElements = Array.from(kbModal.querySelectorAll(focusableSelectors))
+      .filter(el => !el.disabled && el.tabIndex !== -1 && el.offsetParent !== null);
+    firstFocusElement = focusElements[0];
+    lastFocusElement = focusElements[focusElements.length - 1];
+    if (firstFocusElement) {
+      firstFocusElement.focus();
+    }
+  }
+  function handleModalKeyDown(e) {
+    if (e.key === "Escape") {
+      closeKbModal();
+      return;
+    }
+    if (e.key === "Tab") {
+      // Re-evaluate active focusable elements because profile loads dynamically
+      focusElements = Array.from(kbModal.querySelectorAll(focusableSelectors))
+        .filter(el => !el.disabled && el.tabIndex !== -1 && el.offsetParent !== null);
+      firstFocusElement = focusElements[0];
+      lastFocusElement = focusElements[focusElements.length - 1];
+      if (focusElements.length === 0) return;
+      if (e.shiftKey) { // Shift + Tab
+        if (document.activeElement === firstFocusElement) {
+          lastFocusElement.focus();
+          e.preventDefault();
+        }
+      } else { // Tab
+        if (document.activeElement === lastFocusElement) {
+          firstFocusElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+  }
+  // Bind dropdown item clicks
   if (kbOptFederal) {
     kbOptFederal.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       kbMenu.classList.remove("show");
-      if (kbModal && kbTitle && kbContent) {
-        kbTitle.innerText = "Federal Knowledge Base";
-        kbContent.innerHTML = `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-            <div>
-              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Active US Senate Appropriations</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Tracks active federal grant opportunities, community development funds, and infrastructure capital initiatives available for application in Illinois.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>USDA Rural Development Cooperative Grants</li>
-                <li>HUD Community Development Block Grants (CDBG)</li>
-                <li>Department of Transportation Safe Streets for All (SS4A)</li>
-              </ul>
-            </div>
-            <div>
-              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Bipartisan Infrastructure Law (BIL) Tracker</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Highlights allocations, matching requirements, and timeline trackers for federal infrastructure grants designated for collar counties.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>IIJA Bridge Investment Program ($4.2M Local Pool)</li>
-                <li>EPA Clean Water State Revolving Fund</li>
-                <li>Federal Transit Administration Bus & Bus Facilities Program</li>
-              </ul>
-            </div>
-            <div>
-              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Federal Agency Policy Guidelines</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Reference compliance rules, regulatory guidelines, and standard operating procedures published by federal executive agencies.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>EPA Lead and Copper Rule Improvements (LCRI)</li>
-                <li>HHS Medicare Part D Local Reimbursement Baselines</li>
-                <li>Federal Highway Administration Environmental Impact Frameworks</li>
-              </ul>
-            </div>
-            <div>
-              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Congressional Hearing Summaries</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Briefings and executive summaries of testimonies, statements, and reports relevant to collar county economic and transit networks.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>Senate Committee on Commerce Transportation Updates</li>
-                <li>Joint Economic Committee Local Job Growth Briefs</li>
-                <li>House Committee on Ways and Means Tax Credit Analysis</li>
-              </ul>
-            </div>
-          </div>
-        `;
-        kbModal.style.display = "flex";
-      }
+      openKbModal("federal");
     });
   }
   if (kbOptState) {
@@ -1008,61 +1207,44 @@ function setupEventListeners() {
       e.preventDefault();
       e.stopPropagation();
       kbMenu.classList.remove("show");
-      if (kbModal && kbTitle && kbContent) {
-        kbTitle.innerText = "State Knowledge Base";
-        kbContent.innerHTML = `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-            <div>
-              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Illinois General Assembly (ILGA) Bill Tracker</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Tracks current progress, sponsor lists, and committee deadlines for sponsored bills in Springfield.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>SB-1142: Cost-of-Living Pension Adjustment</li>
-                <li>SB-2241: Comprehensive School Healthcare Coverage</li>
-                <li>HB-3042: Collar County Infrastructure Grant Incentives</li>
-              </ul>
-            </div>
-            <div>
-              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Illinois Appropriations & Education Funding</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Reference materials on Evidence-Based Funding (EBF) state distribution tiers and IDOT transportation formulas.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>ISBE EBF Funding Tier 1 vs Tier 2 Baselines</li>
-                <li>IDOT Motor Fuel Tax (MFT) County Distribution Formulas</li>
-                <li>IDPH Local Health Department Infrastructure Grants</li>
-              </ul>
-            </div>
-            <div>
-              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Collar County Playbook</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Reference case studies of successful legislative implementations and local appropriations templates in peer districts.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>SD-29 Mobile Health Units Grant Application Package</li>
-                <li>SD-30 Municipal Water Main Replacement Cooperative Agreements</li>
-                <li>SD-28 Local Business Enterprise (LBE) Tax Incentive Guidelines</li>
-              </ul>
-            </div>
-            <div>
-              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Illinois Environmental Protection Agency (IEPA) Options</h4>
-              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">State-level environmental matching grants, lead line replacement revolving loans, and water treatment assistance.</p>
-              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
-                <li>IEPA State Revolving Fund Lead Service Line Replacement Loans</li>
-                <li>Illinois Clean Water Initiative Municipal Grants</li>
-                <li>IEPA Wastewater Infrastructure Optimization Assistance</li>
-              </ul>
-            </div>
-          </div>
-        `;
-        kbModal.style.display = "flex";
+      openKbModal("state");
+    });
+  }
+  // Bind tab toggles
+  if (kbTabFederal) {
+    kbTabFederal.addEventListener("click", () => {
+      if (kbActiveTab !== "federal") {
+        kbActiveTab = "federal";
+        kbTabFederal.style.borderBottomColor = "#14b8a6";
+        kbTabFederal.style.color = "white";
+        kbTabFederal.style.fontWeight = "600";
+        
+        kbTabState.style.borderBottomColor = "transparent";
+        kbTabState.style.color = "var(--text-secondary)";
+        kbTabState.style.fontWeight = "500";
+        
+        renderActiveTab();
       }
     });
   }
-  if (kbClose && kbModal) {
-    kbClose.addEventListener("click", () => {
-      kbModal.style.display = "none";
-    });
-    kbModal.addEventListener("click", (e) => {
-      if (e.target === kbModal) {
-        kbModal.style.display = "none";
+  if (kbTabState) {
+    kbTabState.addEventListener("click", () => {
+      if (kbActiveTab !== "state") {
+        kbActiveTab = "state";
+        kbTabState.style.borderBottomColor = "#14b8a6";
+        kbTabState.style.color = "white";
+        kbTabState.style.fontWeight = "600";
+        
+        kbTabFederal.style.borderBottomColor = "transparent";
+        kbTabFederal.style.color = "var(--text-secondary)";
+        kbTabFederal.style.fontWeight = "500";
+        
+        renderActiveTab();
       }
     });
+  }
+  if (kbClose) {
+    kbClose.addEventListener("click", closeKbModal);
   }
   // Initialize Legend scale display
   updateLegend();
