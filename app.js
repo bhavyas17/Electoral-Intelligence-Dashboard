@@ -934,6 +934,136 @@ function setupEventListeners() {
     });
   }
 
+  // Knowledge Base dropdown menu toggle
+  const kbTrigger = document.getElementById("btn-knowledge-base");
+  const kbMenu = document.getElementById("knowledge-base-dropdown-menu");
+  if (kbTrigger && kbMenu) {
+    kbTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      kbMenu.classList.toggle("show");
+    });
+    document.addEventListener("click", () => {
+      kbMenu.classList.remove("show");
+    });
+  }
+  const kbModal = document.getElementById("kb-modal");
+  const kbTitle = document.getElementById("kb-modal-title");
+  const kbContent = document.getElementById("kb-modal-content");
+  const kbClose = document.getElementById("btn-close-kb-modal");
+  const kbOptFederal = document.getElementById("kb-opt-federal");
+  const kbOptState = document.getElementById("kb-opt-state");
+  if (kbOptFederal) {
+    kbOptFederal.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      kbMenu.classList.remove("show");
+      if (kbModal && kbTitle && kbContent) {
+        kbTitle.innerText = "Federal Knowledge Base";
+        kbContent.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Active US Senate Appropriations</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Tracks active federal grant opportunities, community development funds, and infrastructure capital initiatives available for application in Illinois.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>USDA Rural Development Cooperative Grants</li>
+                <li>HUD Community Development Block Grants (CDBG)</li>
+                <li>Department of Transportation Safe Streets for All (SS4A)</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Bipartisan Infrastructure Law (BIL) Tracker</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Highlights allocations, matching requirements, and timeline trackers for federal infrastructure grants designated for collar counties.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>IIJA Bridge Investment Program ($4.2M Local Pool)</li>
+                <li>EPA Clean Water State Revolving Fund</li>
+                <li>Federal Transit Administration Bus & Bus Facilities Program</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Federal Agency Policy Guidelines</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Reference compliance rules, regulatory guidelines, and standard operating procedures published by federal executive agencies.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>EPA Lead and Copper Rule Improvements (LCRI)</li>
+                <li>HHS Medicare Part D Local Reimbursement Baselines</li>
+                <li>Federal Highway Administration Environmental Impact Frameworks</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="color: #14b8a6; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Congressional Hearing Summaries</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Briefings and executive summaries of testimonies, statements, and reports relevant to collar county economic and transit networks.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>Senate Committee on Commerce Transportation Updates</li>
+                <li>Joint Economic Committee Local Job Growth Briefs</li>
+                <li>House Committee on Ways and Means Tax Credit Analysis</li>
+              </ul>
+            </div>
+          </div>
+        `;
+        kbModal.style.display = "flex";
+      }
+    });
+  }
+  if (kbOptState) {
+    kbOptState.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      kbMenu.classList.remove("show");
+      if (kbModal && kbTitle && kbContent) {
+        kbTitle.innerText = "State Knowledge Base";
+        kbContent.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Illinois General Assembly (ILGA) Bill Tracker</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Tracks current progress, sponsor lists, and committee deadlines for sponsored bills in Springfield.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>SB-1142: Cost-of-Living Pension Adjustment</li>
+                <li>SB-2241: Comprehensive School Healthcare Coverage</li>
+                <li>HB-3042: Collar County Infrastructure Grant Incentives</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Illinois Appropriations & Education Funding</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Reference materials on Evidence-Based Funding (EBF) state distribution tiers and IDOT transportation formulas.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>ISBE EBF Funding Tier 1 vs Tier 2 Baselines</li>
+                <li>IDOT Motor Fuel Tax (MFT) County Distribution Formulas</li>
+                <li>IDPH Local Health Department Infrastructure Grants</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Collar County Playbook</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">Reference case studies of successful legislative implementations and local appropriations templates in peer districts.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>SD-29 Mobile Health Units Grant Application Package</li>
+                <li>SD-30 Municipal Water Main Replacement Cooperative Agreements</li>
+                <li>SD-28 Local Business Enterprise (LBE) Tax Incentive Guidelines</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.35rem; margin-top: 0; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;">Illinois Environmental Protection Agency (IEPA) Options</h4>
+              <p style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">State-level environmental matching grants, lead line replacement revolving loans, and water treatment assistance.</p>
+              <ul style="font-size: 0.72rem; padding-left: 1.2rem; color: #cbd5e1; line-height: 1.4;">
+                <li>IEPA State Revolving Fund Lead Service Line Replacement Loans</li>
+                <li>Illinois Clean Water Initiative Municipal Grants</li>
+                <li>IEPA Wastewater Infrastructure Optimization Assistance</li>
+              </ul>
+            </div>
+          </div>
+        `;
+        kbModal.style.display = "flex";
+      }
+    });
+  }
+  if (kbClose && kbModal) {
+    kbClose.addEventListener("click", () => {
+      kbModal.style.display = "none";
+    });
+    kbModal.addEventListener("click", (e) => {
+      if (e.target === kbModal) {
+        kbModal.style.display = "none";
+      }
+    });
+  }
   // Initialize Legend scale display
   updateLegend();
 }
